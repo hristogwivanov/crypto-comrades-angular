@@ -1,0 +1,21 @@
+<div class="add-holding-container">
+  <h2>Add New Cryptocurrency Holding</h2>
+  <form (ngSubmit)="onSubmit()" class="holding-form">
+    <div class="form-group">
+      <label for="cryptocurrency">Cryptocurrency:</label>
+      <input type="text" id="cryptocurrency" name="cryptocurrency" required>
+    </div>
+    <div class="form-group">
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" name="amount" step="0.00000001" required>
+    </div>
+    <div class="form-group">
+      <label for="purchasePrice">Purchase Price (USD):</label>
+      <input type="number" id="purchasePrice" name="purchasePrice" step="0.01" required>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Add Holding</button>
+      <a routerLink="../portfolio" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
