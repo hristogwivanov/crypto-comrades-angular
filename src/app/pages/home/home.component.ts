@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, take, catchError } from 'rxjs/operators';
 import { CryptoService } from '../../services/crypto.service';
 import { PostService } from '../../services/post.service';
 import { AuthService } from '../../services/auth.service';
@@ -122,12 +122,22 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.isAuthenticated$ = this.authService.isAuthenticated$;
+    
+    // Add error handling for API calls
     this.topCryptos$ = this.cryptoService.getTopCryptos().pipe(
-      map(cryptos => cryptos.slice(0, 6))
+      map(cryptos => cryptos.slice(0, 6)),
+      catchError((error: any) => {
+        console.warn('Failed to load crypto data:', error);
+        return of([]); // Return empty array on error
+      })
     );
 
     this.recentPosts$ = this.postService.getPosts().pipe(
-      map(posts => posts.slice(0, 3))
+      map(posts => posts.slice(0, 3)),
+      catchError((error: any) => {
+        console.warn('Failed to load posts data:', error);
+        return of([]); // Return empty array on error
+      })
     );
   }
 }
