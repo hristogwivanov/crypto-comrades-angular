@@ -1,0 +1,326 @@
+import { Injectable } from '@angular/core';
+import { Observable, map, switchMap, combineLatest, of } from 'rxjs';
+import { Post, Comment, PostInteraction } from '../models/post.interface';
+import { FirebaseService } from './firebase.service';
+import { FirebaseAuthService } from './firebase-auth.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class FirebasePostsService {
+
+  constructor(
+    private firebaseService: FirebaseService,
+    private authService: FirebaseAuthService
+  ) {}
+
+  // POST OPERATIONS
+
+  /**
+   * Create a new post
+   */
+  createPost(postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'dislikes' | 'comments'>): Observable<string> {
+    const post: Omit<Post, 'id'> = {
+      ...postData,
+      likes: 0,
+      dislikes: 0,
+      comments: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    return this.firebaseService.add('posts', post);
+  }
+
+  /**
+   * Get all posts (public posts or user's own posts)
+   */
+  getAllPosts(limitCount?: number): Observable<Post[]> {
+    if (limitCount) {
+      return this.firebaseService.getAll<Post>('posts',
+        this.firebaseService.where('isPublic', '==', true),
+        this.firebaseService.orderBy('createdAt', 'desc'),
+        this.firebaseService.limit(limitCount)
+      );
+    } else {
+      return this.firebaseService.getAll<Post>('posts',
+        this.firebaseService.where('isPublic', '==', true),
+        this.firebaseService.orderBy('createdAt', 'desc')
+      );
+    }
+  }
+
+  /**
+   * Get posts by user ID
+   */
+  getPostsByUserId(userId: string, includePrivate: boolean = false): Observable<Post[]> {
+    const constraints = [
+      this.firebaseService.where('userId', '==', userId),
+      this.firebaseService.orderBy('createdAt', 'desc')
+    ];
+
+    if (!includePrivate) {
+      constraints.push(this.firebaseService.where('isPublic', '==', true));
+    }
+
+    return this.firebaseService.getAll<Post>('posts', ...constraints);
+  }
+
+  /**
+   * Get current user's posts
+   */
+  getCurrentUserPosts(): Observable<Post[]> {
+    return this.authService.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        return this.getPostsByUserId(user.id, true); // Include private posts for current user
+      })
+    );
+  }
+
+  /**
+   * Get post by ID
+   */
+  getPostById(postId: string): Observable<Post | null> {
+    return this.firebaseService.get<Post>('posts', postId);
+  }
+
+  /**
+   * Update post
+   */
+  updatePost(postId: string, updates: Partial<Post>): Observable<void> {
+    return this.firebaseService.update('posts', postId, {
+      ...updates,
+      updatedAt: new Date()
+    });
+  }
+
+  /**
+   * Delete post
+   */
+  deletePost(postId: string): Observable<void> {
+    return this.firebaseService.delete('posts', postId);
+  }
+
+  /**
+   * Search posts by title or content
+   */
+  searchPosts(searchTerm: string): Observable<Post[]> {
+    // Note: Firestore doesn't support full-text search natively
+    // This is a basic implementation - consider using Algolia or similar for advanced search
+    return this.getAllPosts().pipe(
+      map(posts => posts.filter(post => 
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      ))
+    );
+  }
+
+  /**
+   * Get posts by crypto mentions
+   */
+  getPostsByCrypto(cryptoSymbol: string): Observable<Post[]> {
+    return this.firebaseService.getAll<Post>('posts',
+      this.firebaseService.where('cryptoMentions', 'array-contains', cryptoSymbol.toUpperCase()),
+      this.firebaseService.where('isPublic', '==', true),
+      this.firebaseService.orderBy('createdAt', 'desc')
+    );
+  }
+
+  /**
+   * Get posts by tags
+   */
+  getPostsByTag(tag: string): Observable<Post[]> {
+    return this.firebaseService.getAll<Post>('posts',
+      this.firebaseService.where('tags', 'array-contains', tag.toLowerCase()),
+      this.firebaseService.where('isPublic', '==', true),
+      this.firebaseService.orderBy('createdAt', 'desc')
+    );
+  }
+
+  // COMMENT OPERATIONS
+
+  /**
+   * Add comment to post
+   */
+  addComment(postId: string, commentData: Omit<Comment, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'dislikes'>): Observable<string> {
+    const comment: Omit<Comment, 'id'> = {
+      ...commentData,
+      postId,
+      likes: 0,
+      dislikes: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    return this.firebaseService.addToSubcollection('posts', postId, 'comments', comment);
+  }
+
+  /**
+   * Get comments for a post
+   */
+  getPostComments(postId: string): Observable<Comment[]> {
+    return this.firebaseService.getSubcollection<Comment>(
+      'posts', 
+      postId, 
+      'comments',
+      this.firebaseService.orderBy('createdAt', 'asc')
+    );
+  }
+
+  /**
+   * Update comment
+   */
+  updateComment(postId: string, commentId: string, updates: Partial<Comment>): Observable<void> {
+    return this.firebaseService.update(`posts/${postId}/comments`, commentId, {
+      ...updates,
+      updatedAt: new Date()
+    });
+  }
+
+  /**
+   * Delete comment
+   */
+  deleteComment(postId: string, commentId: string): Observable<void> {
+    return this.firebaseService.delete(`posts/${postId}/comments`, commentId);
+  }
+
+  // INTERACTION OPERATIONS (LIKES/DISLIKES)
+
+  /**
+   * Like or dislike a post
+   */
+  interactWithPost(postId: string, type: 'like' | 'dislike'): Observable<void> {
+    return this.authService.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) throw new Error('User must be logged in to interact with posts');
+
+        // First, check if user already interacted with this post
+        return this.getUserPostInteraction(postId, user.id).pipe(
+          switchMap(existingInteraction => {
+            if (existingInteraction) {
+              if (existingInteraction.type === type) {
+                // Remove the interaction (unlike/undislike)
+                return this.removePostInteraction(postId, user.id, existingInteraction.id);
+              } else {
+                // Update the interaction type
+                return this.updatePostInteraction(postId, user.id, existingInteraction.id, type);
+              }
+            } else {
+              // Create new interaction
+              return this.createPostInteraction(postId, user.id, type);
+            }
+          })
+        );
+      })
+    );
+  }
+
+  /**
+   * Get user's interaction with a post
+   */
+  getUserPostInteraction(postId: string, userId: string): Observable<PostInteraction | null> {
+    return this.firebaseService.getAll<PostInteraction>('post_interactions',
+      this.firebaseService.where('postId', '==', postId),
+      this.firebaseService.where('userId', '==', userId)
+    ).pipe(
+      map(interactions => interactions.length > 0 ? interactions[0] : null)
+    );
+  }
+
+  /**
+   * Create post interaction
+   */
+  private createPostInteraction(postId: string, userId: string, type: 'like' | 'dislike'): Observable<void> {
+    const interaction: Omit<PostInteraction, 'id'> = {
+      postId,
+      userId,
+      type,
+      createdAt: new Date()
+    };
+
+    return this.firebaseService.add('post_interactions', interaction).pipe(
+      switchMap(() => this.updatePostCounts(postId, type, 1))
+    );
+  }
+
+  /**
+   * Update post interaction
+   */
+  private updatePostInteraction(postId: string, userId: string, interactionId: string, newType: 'like' | 'dislike'): Observable<void> {
+    return this.getUserPostInteraction(postId, userId).pipe(
+      switchMap(existingInteraction => {
+        if (!existingInteraction) throw new Error('Interaction not found');
+        
+        const oldType = existingInteraction.type;
+        
+        return this.firebaseService.update('post_interactions', interactionId, {
+          type: newType,
+          updatedAt: new Date()
+        }).pipe(
+          switchMap(() => combineLatest([
+            this.updatePostCounts(postId, oldType, -1),
+            this.updatePostCounts(postId, newType, 1)
+          ])),
+          map(() => void 0)
+        );
+      })
+    );
+  }
+
+  /**
+   * Remove post interaction
+   */
+  private removePostInteraction(postId: string, userId: string, interactionId: string): Observable<void> {
+    return this.getUserPostInteraction(postId, userId).pipe(
+      switchMap(interaction => {
+        if (!interaction) throw new Error('Interaction not found');
+        
+        return this.firebaseService.delete('post_interactions', interactionId).pipe(
+          switchMap(() => this.updatePostCounts(postId, interaction.type, -1))
+        );
+      })
+    );
+  }
+
+  /**
+   * Update post like/dislike counts
+   */
+  private updatePostCounts(postId: string, type: 'like' | 'dislike', increment: number): Observable<void> {
+    return this.getPostById(postId).pipe(
+      switchMap(post => {
+        if (!post) throw new Error('Post not found');
+        
+        const updates: Partial<Post> = {};
+        if (type === 'like') {
+          updates.likes = Math.max(0, post.likes + increment);
+        } else {
+          updates.dislikes = Math.max(0, post.dislikes + increment);
+        }
+        
+        return this.firebaseService.update('posts', postId, updates);
+      })
+    );
+  }
+
+  /**
+   * Get trending posts (most liked in last 7 days)
+   */
+  getTrendingPosts(limit: number = 10): Observable<Post[]> {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    return this.firebaseService.getAll<Post>('posts',
+      this.firebaseService.where('isPublic', '==', true),
+      this.firebaseService.where('createdAt', '>=', weekAgo),
+      this.firebaseService.orderBy('createdAt', 'desc'),
+      this.firebaseService.limit(50) // Get more and sort by likes
+    ).pipe(
+      map(posts => posts
+        .sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes))
+        .slice(0, limit)
+      )
+    );
+  }
+}

@@ -29,6 +29,7 @@ export interface CryptoCurrency {
 export interface PortfolioHolding {
   id: string;
   userId: string;
+  portfolioId: string;
   cryptoId: string;
   symbol: string;
   name: string;
