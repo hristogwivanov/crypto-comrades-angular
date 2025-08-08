@@ -1,0 +1,36 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer hexagon -->
+  <polygon points="20,3 33,9 33,21 20,27 7,21 7,9" 
+           fill="url(#hexGrad)" stroke="#fff" stroke-width="1.5"/>
+  
+  <!-- Inner hexagon -->
+  <polygon points="20,7 28,11 28,19 20,23 12,19 12,11" 
+           fill="url(#innerGrad)" stroke="#fff" stroke-width="1"/>
+  
+  <!-- CC monogram -->
+  <text x="20" y="18" font-family="Arial Black, sans-serif" font-size="8" font-weight="900" 
+        fill="#fff" text-anchor="middle">CC</text>
+  
+  <!-- Corner accent dots -->
+  <circle cx="6" cy="6" r="2.5" fill="#10b981"/>
+  <circle cx="34" cy="6" r="2.5" fill="#10b981"/>
+  <circle cx="6" cy="34" r="2.5" fill="#10b981"/>
+  <circle cx="34" cy="34" r="2.5" fill="#10b981"/>
+  
+  <!-- Subtle connecting lines -->
+  <line x1="9" y1="9" x2="6" y2="6" stroke="#10b981" stroke-width="2" opacity="0.7"/>
+  <line x1="31" y1="9" x2="34" y2="6" stroke="#10b981" stroke-width="2" opacity="0.7"/>
+  <line x1="9" y1="21" x2="6" y2="34" stroke="#10b981" stroke-width="2" opacity="0.7"/>
+  <line x1="31" y1="21" x2="34" y2="34" stroke="#10b981" stroke-width="2" opacity="0.7"/>
+</svg>
