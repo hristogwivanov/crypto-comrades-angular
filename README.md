@@ -91,7 +91,7 @@ A comprehensive cryptocurrency community platform built with Angular 17+. This S
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/crypto-comrades-angular.git
+   git clone https://github.com/hristogwivanov/crypto-comrades-angular.git
    cd crypto-comrades-angular
    ```
 
@@ -187,7 +187,7 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ using Angular 17+ and TypeScript**
+**Built using Angular 17+ and TypeScript**
 
 To build the project run:
 
