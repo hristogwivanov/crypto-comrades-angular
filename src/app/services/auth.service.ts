@@ -1,150 +1,184 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, throwError, of, from } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../models/user.interface';
+import { Auth } from '@angular/fire/auth';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile,
+  User as FirebaseUser
+} from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'https://crypto-comrades-api.netlify.app';
-  private readonly TOKEN_KEY = 'auth_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly USER_KEY = 'current_user';
 
   private currentUserSubject = new BehaviorSubject<User | null>(this.getUserFromStorage());
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasValidToken());
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
 
   public currentUser$ = this.currentUserSubject.asObservable();
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  private auth = inject(Auth);
+
+  constructor() {
     this.initializeAuthState();
   }
 
   private initializeAuthState(): void {
-    const token = this.getToken();
-    const user = this.getUserFromStorage();
-    
-    if (token && user) {
-      this.currentUserSubject.next(user);
-      this.isAuthenticatedSubject.next(true);
-    }
+    // Listen to Firebase auth state changes
+    onAuthStateChanged(this.auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const user: User = this.mapFirebaseUserToUser(firebaseUser);
+        this.setUserInStorage(user);
+        this.currentUserSubject.next(user);
+        this.isAuthenticatedSubject.next(true);
+      } else {
+        this.handleLogout();
+      }
+    });
   }
 
   login(credentials: LoginCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/auth/login`, credentials)
+    return from(signInWithEmailAndPassword(this.auth, credentials.email, credentials.password))
       .pipe(
+        map(userCredential => {
+          const user = this.mapFirebaseUserToUser(userCredential.user);
+          return {
+            token: userCredential.user.uid, // Use UID as token
+            refreshToken: userCredential.user.refreshToken || '',
+            user: user
+          } as AuthResponse;
+        }),
         tap(response => this.handleAuthSuccess(response)),
-        catchError(this.handleError)
+        catchError(this.handleFirebaseError)
       );
   }
 
   register(credentials: RegisterCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/auth/register`, credentials)
+    return from(createUserWithEmailAndPassword(this.auth, credentials.email, credentials.password))
       .pipe(
+        switchMap(userCredential => {
+          // Update the user's display name
+          const displayName = `${credentials.firstName} ${credentials.lastName}`;
+          return from(updateProfile(userCredential.user, { displayName }))
+            .pipe(
+              map(() => userCredential)
+            );
+        }),
+        map(userCredential => {
+          const user = this.mapFirebaseUserToUser(userCredential.user);
+          user.firstName = credentials.firstName;
+          user.lastName = credentials.lastName;
+          user.username = credentials.username;
+          
+          return {
+            token: userCredential.user.uid,
+            refreshToken: userCredential.user.refreshToken || '',
+            user: user
+          } as AuthResponse;
+        }),
         tap(response => this.handleAuthSuccess(response)),
-        catchError(this.handleError)
+        catchError(this.handleFirebaseError)
       );
   }
 
   logout(): Observable<boolean> {
-    return this.http.post(`${this.API_URL}/auth/logout`, {})
+    return from(signOut(this.auth))
       .pipe(
-        catchError(() => of(true)),
-        tap(() => this.handleLogout()),
-        map(() => true)
-      );
-  }
-
-  refreshToken(): Observable<AuthResponse> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-
-    return this.http.post<AuthResponse>(`${this.API_URL}/auth/refresh`, { refreshToken })
-      .pipe(
-        tap(response => this.handleAuthSuccess(response)),
-        catchError(error => {
+        map(() => {
           this.handleLogout();
-          return throwError(() => error);
+          return true;
+        }),
+        catchError(() => {
+          this.handleLogout();
+          return of(true);
         })
       );
   }
 
-  getCurrentUser(): Observable<User | null> {
-    return this.currentUser$.pipe(
-      switchMap(user => {
-        if (user && this.hasValidToken()) {
-          return this.http.get<User>(`${this.API_URL}/auth/me`)
-            .pipe(
-              tap(updatedUser => {
-                this.setUserInStorage(updatedUser);
-                this.currentUserSubject.next(updatedUser);
-              }),
-              catchError(() => {
-                this.handleLogout();
-                return of(null);
-              })
-            );
-        }
-        return of(user);
+  refreshToken(): Observable<AuthResponse> {
+    // Firebase handles token refresh automatically
+    return this.getCurrentUser().pipe(
+      map(user => {
+        if (!user) throw new Error('No user found');
+        return {
+          token: this.auth.currentUser?.uid || '',
+          refreshToken: this.auth.currentUser?.refreshToken || '',
+          user: user
+        } as AuthResponse;
       })
     );
   }
 
+  getCurrentUser(): Observable<User | null> {
+    return this.currentUser$;
+  }
+
+  private mapFirebaseUserToUser(firebaseUser: FirebaseUser): User {
+    const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
+    return {
+      id: firebaseUser.uid,
+      email: firebaseUser.email || '',
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+      username: firebaseUser.email?.split('@')[0] || '',
+      createdAt: new Date(firebaseUser.metadata.creationTime || new Date()),
+      isEmailVerified: firebaseUser.emailVerified
+    };
+  }
+
   private handleAuthSuccess(response: AuthResponse): void {
-    this.setToken(response.token);
-    this.setRefreshToken(response.refreshToken);
     this.setUserInStorage(response.user);
     this.currentUserSubject.next(response.user);
     this.isAuthenticatedSubject.next(true);
   }
 
   private handleLogout(): void {
-    this.removeToken();
-    this.removeRefreshToken();
     this.removeUserFromStorage();
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
   }
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
+  private handleFirebaseError(error: any): Observable<never> {
     let errorMessage = 'An unknown error occurred';
     
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Client Error: ${error.error.message}`;
-    } else {
-      errorMessage = error.error?.message || `Server Error: ${error.status} ${error.statusText}`;
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'Email already exists. Please choose a different email.';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Please enter a valid email address.';
+        break;
+      case 'auth/operation-not-allowed':
+        errorMessage = 'Email/password authentication is not enabled.';
+        break;
+      case 'auth/weak-password':
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+        break;
+      case 'auth/user-disabled':
+        errorMessage = 'This account has been disabled.';
+        break;
+      case 'auth/user-not-found':
+        errorMessage = 'No account found with this email.';
+        break;
+      case 'auth/wrong-password':
+        errorMessage = 'Incorrect password.';
+        break;
+      default:
+        errorMessage = error.message || 'Authentication failed.';
     }
     
     return throwError(() => new Error(errorMessage));
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  private setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
-
-  private removeToken(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-  }
-
-  private getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  private setRefreshToken(token: string): void {
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
-  }
-
-  private removeRefreshToken(): void {
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    return this.auth.currentUser?.uid || null;
   }
 
   private getUserFromStorage(): User | null {

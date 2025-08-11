@@ -2,6 +2,8 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  firstName: string;
+  lastName: string;
   avatar?: string;
   createdAt: Date;
   isEmailVerified: boolean;
@@ -22,6 +24,8 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials extends LoginCredentials {
+  firstName: string;
+  lastName: string;
   username: string;
   confirmPassword: string;
 }

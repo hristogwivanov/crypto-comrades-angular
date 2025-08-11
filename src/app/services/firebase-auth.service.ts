@@ -65,6 +65,8 @@ export class FirebaseAuthService {
         const userData: Omit<UserProfile, 'id'> = {
           email: firebaseUser.email!,
           username: credentials.username,
+          firstName: credentials.firstName || '',
+          lastName: credentials.lastName || '',
           avatar: firebaseUser.photoURL || undefined,
           createdAt: new Date(),
           isEmailVerified: false,
@@ -164,10 +166,13 @@ export class FirebaseAuthService {
    * Convert Firebase user to app User interface
    */
   private createUserFromFirebaseUser(firebaseUser: FirebaseUser): User {
+    const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
     return {
       id: firebaseUser.uid,
       email: firebaseUser.email!,
       username: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
       avatar: firebaseUser.photoURL || undefined,
       createdAt: new Date(firebaseUser.metadata.creationTime!),
       isEmailVerified: firebaseUser.emailVerified
