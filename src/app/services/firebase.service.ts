@@ -30,11 +30,7 @@ export class FirebaseService {
   
   constructor(private firestore: Firestore) {}
 
-  // Generic CRUD operations
-  
-  /**
-   * Add a document to a collection
-   */
+
   add<T>(collectionName: string, data: T): Observable<string> {
     const collectionRef = collection(this.firestore, collectionName);
     const docData = this.convertDatesToTimestamps(data);
@@ -43,18 +39,14 @@ export class FirebaseService {
     );
   }
 
-  /**
-   * Set a document with a specific ID
-   */
+
   set<T>(collectionName: string, docId: string, data: T): Observable<void> {
     const docRef = doc(this.firestore, collectionName, docId);
     const docData = this.convertDatesToTimestamps(data);
     return from(setDoc(docRef, docData));
   }
 
-  /**
-   * Get a document by ID
-   */
+
   get<T>(collectionName: string, docId: string): Observable<T | null> {
     const docRef = doc(this.firestore, collectionName, docId);
     return from(getDoc(docRef)).pipe(
@@ -68,9 +60,7 @@ export class FirebaseService {
     );
   }
 
-  /**
-   * Get all documents from a collection
-   */
+
   getAll<T>(collectionName: string, ...queryConstraints: QueryConstraint[]): Observable<T[]> {
     const collectionRef = collection(this.firestore, collectionName);
     const q = queryConstraints.length > 0 
@@ -87,26 +77,20 @@ export class FirebaseService {
     );
   }
 
-  /**
-   * Update a document
-   */
+
   update<T>(collectionName: string, docId: string, data: Partial<T>): Observable<void> {
     const docRef = doc(this.firestore, collectionName, docId);
     const updateData = this.convertDatesToTimestamps(data);
     return from(updateDoc(docRef, updateData));
   }
 
-  /**
-   * Delete a document
-   */
+
   delete(collectionName: string, docId: string): Observable<void> {
     const docRef = doc(this.firestore, collectionName, docId);
     return from(deleteDoc(docRef));
   }
 
-  /**
-   * Get documents from a subcollection
-   */
+
   getSubcollection<T>(
     parentCollection: string, 
     parentDocId: string, 
@@ -133,9 +117,7 @@ export class FirebaseService {
     );
   }
 
-  /**
-   * Add document to subcollection
-   */
+
   addToSubcollection<T>(
     parentCollection: string, 
     parentDocId: string, 
@@ -154,16 +136,12 @@ export class FirebaseService {
     );
   }
 
-  /**
-   * Helper to get server timestamp
-   */
+
   getServerTimestamp(): any {
     return serverTimestamp();
   }
 
-  /**
-   * Convert Date objects to Firestore Timestamps
-   */
+
   private convertDatesToTimestamps(data: any): any {
     if (!data) return data;
     
@@ -180,7 +158,7 @@ export class FirebaseService {
     return converted;
   }
 
-  // Query helpers
+
   where = where;
   orderBy = orderBy;
   limit = limit;
