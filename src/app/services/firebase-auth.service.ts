@@ -179,9 +179,6 @@ export class FirebaseAuthService {
     };
   }
 
-  /**
-   * Resend email verification
-   */
   resendEmailVerification(): Observable<void> {
     const user = this.getCurrentFirebaseUser();
     if (!user) {
@@ -190,14 +187,10 @@ export class FirebaseAuthService {
     return from(sendEmailVerification(user));
   }
 
-  /**
-   * Check if user is admin (can be extended with custom claims)
-   */
+
   isAdmin(): Observable<boolean> {
     return this.currentUser$.pipe(
       map(user => {
-        // Add your admin logic here
-        // For now, return false or check against a list of admin emails
         return false;
       })
     );
