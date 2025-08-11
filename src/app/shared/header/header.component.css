@@ -80,17 +80,7 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-.nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: #00d4aa;
-  border-radius: 50%;
-}
+
 
 .user-menu {
   position: relative;
