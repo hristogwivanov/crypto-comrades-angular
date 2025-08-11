@@ -78,16 +78,7 @@ import { AuthService } from '../../../services/auth.service';
           </div>
         </div>
 
-        <div class="demo-credentials" *ngIf="showDemoCredentials">
-          <h3>Demo Credentials</h3>
-          <div class="demo-account">
-            <p><strong>Email:</strong> demo@cryptocomrades.com</p>
-            <p><strong>Password:</strong> demo123</p>
-            <button type="button" (click)="fillDemoCredentials()" class="btn btn-outline btn-small">
-              Use Demo Account
-            </button>
-          </div>
-        </div>
+
 
         <div class="auth-features">
           <div class="feature">
@@ -112,7 +103,7 @@ export class LoginComponent implements OnDestroy {
   loginForm: FormGroup;
   isSubmitting = false;
   loginError: string | null = null;
-  showDemoCredentials = true;
+
 
   private destroy$ = new Subject<void>();
 
@@ -158,7 +149,7 @@ export class LoginComponent implements OnDestroy {
       next: (response) => {
         this.isSubmitting = false;
         
-        // Redirect to dashboard or return URL
+
         const returnUrl = this.getReturnUrl();
         this.router.navigate([returnUrl]);
       },
@@ -177,12 +168,7 @@ export class LoginComponent implements OnDestroy {
     });
   }
 
-  fillDemoCredentials(): void {
-    this.loginForm.patchValue({
-      email: 'demo@cryptocomrades.com',
-      password: 'demo123'
-    });
-  }
+
 
   private markFormGroupTouched(): void {
     Object.keys(this.loginForm.controls).forEach(key => {
@@ -192,7 +178,7 @@ export class LoginComponent implements OnDestroy {
   }
 
   private getReturnUrl(): string {
-    // Check for return URL in route params or default to dashboard
+
     const urlParams = new URLSearchParams(window.location.search);
     const returnUrl = urlParams.get('returnUrl');
     return returnUrl && returnUrl.startsWith('/') ? returnUrl : '/dashboard';
