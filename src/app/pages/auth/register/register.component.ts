@@ -203,8 +203,7 @@ export class RegisterComponent implements OnDestroy {
       username: ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8), this.strongPasswordValidator]],
-      confirmPassword: ['', [Validators.required]],
-
+      confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
     // Watch password changes for requirements display
@@ -242,8 +241,7 @@ export class RegisterComponent implements OnDestroy {
       username: formData.username,
       email: formData.email,
       password: formData.password,
-      confirmPassword: formData.confirmPassword,
-
+      confirmPassword: formData.confirmPassword
     };
 
     this.authService.register(registerRequest).pipe(
