@@ -117,24 +117,7 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="checkbox-container">
-              <input type="checkbox" formControlName="agreeToTerms" class="checkbox-input">
-              <span class="checkbox-label">
-                I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
-              </span>
-            </label>
-            <div class="form-error" *ngIf="agreeToTermsControl.invalid && agreeToTermsControl.touched">
-              <small>You must agree to the terms to create an account</small>
-            </div>
-          </div>
 
-          <div class="form-group">
-            <label class="checkbox-container">
-              <input type="checkbox" formControlName="subscribeNewsletter" class="checkbox-input">
-              <span class="checkbox-label">Subscribe to our newsletter for market updates and insights</span>
-            </label>
-          </div>
 
           <div class="form-error" *ngIf="registerError">
             <small>{{ registerError }}</small>
@@ -221,8 +204,7 @@ export class RegisterComponent implements OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8), this.strongPasswordValidator]],
       confirmPassword: ['', [Validators.required]],
-      agreeToTerms: [false, [Validators.requiredTrue]],
-      subscribeNewsletter: [false]
+
     }, { validators: this.passwordMatchValidator });
 
     // Watch password changes for requirements display
@@ -242,7 +224,7 @@ export class RegisterComponent implements OnDestroy {
   get emailControl() { return this.registerForm.get('email')!; }
   get passwordControl() { return this.registerForm.get('password')!; }
   get confirmPasswordControl() { return this.registerForm.get('confirmPassword')!; }
-  get agreeToTermsControl() { return this.registerForm.get('agreeToTerms')!; }
+
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
@@ -261,7 +243,7 @@ export class RegisterComponent implements OnDestroy {
       email: formData.email,
       password: formData.password,
       confirmPassword: formData.confirmPassword,
-      subscribeNewsletter: formData.subscribeNewsletter
+
     };
 
     this.authService.register(registerRequest).pipe(
