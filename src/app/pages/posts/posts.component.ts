@@ -82,7 +82,7 @@ import { Post } from '../../models/post.interface';
         <div class="post-card" *ngFor="let post of posts; trackBy: trackByPost" [routerLink]="['/posts', post.id]">
           <div class="post-header">
             <div class="author-info">
-              <img [src]="post.author.avatar || '/assets/default-avatar.png'" 
+              <img [src]="post.author.avatar || '/assets/default-avatar.svg'" 
                    [alt]="post.author.username" class="author-avatar">
               <div class="author-details">
                 <span class="author-name">{{ post.author.username }}</span>

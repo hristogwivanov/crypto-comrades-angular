@@ -222,7 +222,7 @@ import { User } from '../../../models/user.interface';
           <h3>Preview</h3>
           <div class="preview-card">
             <div class="preview-header">
-              <img [src]="(currentUser$ | async)?.avatar || '/assets/default-avatar.png'" 
+              <img [src]="(currentUser$ | async)?.avatar || '/assets/default-avatar.svg'" 
                    [alt]="(currentUser$ | async)?.username" class="preview-avatar">
               <div class="preview-meta">
                 <span class="preview-author">{{ (currentUser$ | async)?.username }}</span>

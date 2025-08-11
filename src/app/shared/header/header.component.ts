@@ -30,7 +30,7 @@ import { User } from '../../models/user.interface';
           <div class="nav-actions">
             <div *ngIf="currentUser; else guestActions" class="user-menu">
               <div class="user-info" (click)="toggleUserMenu()">
-                <img [src]="currentUser.avatar || '/default-avatar.png'" 
+                <img [src]="currentUser.avatar || '/default-avatar.svg'" 
                      [alt]="currentUser.username" 
                      class="user-avatar">
                 <span class="username">{{ currentUser.username }}</span>
