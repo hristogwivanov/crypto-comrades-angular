@@ -145,31 +145,6 @@ import { Post, type Comment } from '../../models/post.interface';
             <h3>Comments ({{ getPostComments(post).length }})</h3>
           </div>
 
-          <div class="comment-form" *ngIf="isAuthenticated$ | async">
-            <form (ngSubmit)="submitComment()" #commentForm="ngForm">
-              <div class="form-group">
-                <textarea 
-                  name="commentContent"
-                  [(ngModel)]="newComment" 
-                  placeholder="Share your thoughts..."
-                  class="comment-textarea"
-                  rows="3"
-                  required
-                  #commentTextarea="ngModel"></textarea>
-                <div class="form-error" *ngIf="commentTextarea.invalid && commentTextarea.touched">
-                  Comment is required
-                </div>
-              </div>
-              <div class="form-actions">
-                <button type="submit" 
-                        class="btn btn-primary btn-lg" 
-                        [disabled]="commentForm.invalid || submittingComment">
-                  {{ submittingComment ? 'Posting...' : 'Post Comment' }}
-                </button>
-              </div>
-            </form>
-          </div>
-
           <div class="comments-list">
             <div class="comment" *ngFor="let comment of getPostComments(post); trackBy: trackByComment">
               <div class="comment-header">
@@ -256,6 +231,31 @@ import { Post, type Comment } from '../../models/post.interface';
             <div class="no-comments" *ngIf="getPostComments(post).length === 0">
               <p>No comments yet. Be the first to share your thoughts!</p>
             </div>
+          </div>
+
+          <div class="comment-form" *ngIf="isAuthenticated$ | async">
+            <form (ngSubmit)="submitComment()" #commentForm="ngForm">
+              <div class="form-group">
+                <textarea 
+                  name="commentContent"
+                  [(ngModel)]="newComment" 
+                  placeholder="Share your thoughts..."
+                  class="comment-textarea"
+                  rows="3"
+                  required
+                  #commentTextarea="ngModel"></textarea>
+                <div class="form-error" *ngIf="commentTextarea.invalid && commentTextarea.touched">
+                  Comment is required
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" 
+                        class="btn btn-primary btn-lg" 
+                        [disabled]="commentForm.invalid || submittingComment">
+                  {{ submittingComment ? 'Posting...' : 'Post Comment' }}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
@@ -426,7 +426,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
   getPostComments(post: Post): Comment[] {
     return post.comments ? post.comments.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     ) : [];
   }
 
@@ -448,7 +448,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
           userId: (user as any).id,
           author: {
             username: (user as any).username || (user as any).email,
-            avatar: (user as any).avatar
+            avatar: (user as any).avatar || '/default-avatar.svg'
           }
         };
 
@@ -457,7 +457,6 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (commentId: string) => {
-        console.log('Comment added successfully:', commentId);
         this.newComment = '';
         this.submittingComment = false;
         this.loadPost();
