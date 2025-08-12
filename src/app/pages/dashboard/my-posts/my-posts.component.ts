@@ -101,10 +101,9 @@ import { User } from '../../../models/user.interface';
               </div>
               
               <div class="post-status">
-                <span class="visibility-badge" 
-                      [class.public]="post.isPublic" 
-                      [class.private]="!post.isPublic">
-                  {{ post.isPublic ? 'Public' : 'Private' }}
+                <span class="visibility-badge private" 
+                      *ngIf="!post.isPublic">
+                  Private
                 </span>
               </div>
             </div>

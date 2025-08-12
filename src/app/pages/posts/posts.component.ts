@@ -90,8 +90,8 @@ import { Post } from '../../models/post.interface';
               </div>
             </div>
             <div class="post-visibility">
-              <span class="visibility-badge" [class.public]="post.isPublic" [class.private]="!post.isPublic">
-                {{ post.isPublic ? 'Public' : 'Private' }}
+              <span class="visibility-badge private" *ngIf="!post.isPublic">
+                Private
               </span>
             </div>
           </div>

@@ -46,8 +46,8 @@ import { Post, Comment } from '../../models/post.interface';
             </div>
             
             <div class="post-meta">
-              <span class="visibility-badge" [class.public]="post.isPublic" [class.private]="!post.isPublic">
-                {{ post.isPublic ? 'Public' : 'Private' }}
+              <span class="visibility-badge private" *ngIf="!post.isPublic">
+                Private
               </span>
               <div class="post-actions" *ngIf="canEditPost(post)">
                 <a [routerLink]="['/dashboard/edit-post', post.id]" class="edit-btn">Edit</a>
