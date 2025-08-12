@@ -180,13 +180,6 @@ import { CryptoCurrency } from '../../../models/crypto.interface';
               Cancel
             </button>
             <button 
-              type="button" 
-              (click)="saveDraft()" 
-              class="btn btn-secondary"
-              [disabled]="isSubmitting">
-              Save Draft
-            </button>
-            <button 
               type="submit" 
               class="btn btn-primary"
               [disabled]="createPostForm.invalid || isSubmitting">
@@ -352,11 +345,6 @@ export class CreatePostComponent implements OnInit, OnDestroy {
 
   togglePreview(): void {
     this.showPreview = !this.showPreview;
-  }
-
-  saveDraft(): void {
-    // For now, just show a message. In a real app, this would save to localStorage or backend
-    alert('Draft saved! (This is a demo feature)');
   }
 
   onSubmit(): void {

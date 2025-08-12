@@ -203,13 +203,6 @@ import { User } from '../../../models/user.interface';
               Cancel
             </button>
             <button 
-              type="button" 
-              (click)="saveDraft()" 
-              class="btn btn-secondary"
-              [disabled]="isSubmitting">
-              Save Draft
-            </button>
-            <button 
               type="submit" 
               class="btn btn-primary"
               [disabled]="editPostForm.invalid || isSubmitting || !hasChanges()">
@@ -486,10 +479,6 @@ export class EditPostComponent implements OnInit, OnDestroy {
 
   togglePreview(): void {
     this.showPreview = !this.showPreview;
-  }
-
-  saveDraft(): void {
-    alert('Draft saved! (This is a demo feature)');
   }
 
   hasChanges(): boolean {
