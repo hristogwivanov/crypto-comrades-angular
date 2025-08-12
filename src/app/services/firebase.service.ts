@@ -85,7 +85,13 @@ export class FirebaseService {
 
   update<T>(collectionName: string, docId: string, data: Partial<T>): Observable<void> {
     const docRef = doc(this.firestore, collectionName, docId);
-    const updateData = this.convertDatesToTimestamps(data);
+    
+    // Filter out undefined values - Firestore doesn't accept them
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    );
+    
+    const updateData = this.convertDatesToTimestamps(cleanedData);
     return from(updateDoc(docRef, updateData));
   }
 

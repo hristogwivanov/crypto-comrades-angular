@@ -4,7 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Subject, of, Observable } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-import { PostService } from '../../../services/post.service';
+import { FirebasePostsService } from '../../../services/firebase-posts.service';
 import { CryptoService } from '../../../services/crypto.service';
 import { AuthService } from '../../../services/auth.service';
 import { Post, UpdatePostRequest } from '../../../models/post.interface';
@@ -285,7 +285,7 @@ export class EditPostComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private cryptoService: CryptoService,
     private authService: AuthService,
     private router: Router,
@@ -301,7 +301,7 @@ export class EditPostComponent implements OnInit, OnDestroy {
           this.router.navigate(['/dashboard/my-posts']);
           return of(null);
         }
-        return this.postService.getPostById(this.postId);
+        return this.firebasePostsService.getPostById(this.postId);
       }),
       takeUntil(this.destroy$)
     ).subscribe({
@@ -337,18 +337,22 @@ export class EditPostComponent implements OnInit, OnDestroy {
   initializeForm(): void {
     if (!this.post) return;
 
+    // Safely get arrays
+    const safeTags = this.getPostTags(this.post);
+    const safeCryptoMentions = this.getPostCryptoMentions(this.post);
+
     this.editPostForm = this.fb.group({
       title: [this.post.title, [Validators.required, Validators.minLength(10), Validators.maxLength(200)]],
       content: [this.post.content, [Validators.required, Validators.minLength(50), Validators.maxLength(5000)]],
       imageUrl: [this.post.imageUrl || '', [Validators.pattern(/^https?:\/\/.+/)]],
-      tags: [this.post.tags.join(', ')],
-      cryptoMentions: [this.post.cryptoMentions?.join(', ') || ''],
+      tags: [safeTags.join(', ')],
+      cryptoMentions: [safeCryptoMentions.join(', ')],
       isPublic: [this.post.isPublic]
     });
 
     // Initialize parsed arrays
-    this.parsedTags = this.parseTags(this.post.tags.join(', '));
-    this.parsedCryptoMentions = this.parseCryptoMentions(this.post.cryptoMentions?.join(', ') || '');
+    this.parsedTags = this.parseTags(safeTags.join(', '));
+    this.parsedCryptoMentions = this.parseCryptoMentions(safeCryptoMentions.join(', '));
   }
 
   setupFormWatchers(): void {
@@ -377,7 +381,7 @@ export class EditPostComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     
-    this.postService.getPostById(this.postId).pipe(
+    this.firebasePostsService.getPostById(this.postId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (post) => {
@@ -426,6 +430,18 @@ export class EditPostComponent implements OnInit, OnDestroy {
       mentions.push(symbol.toUpperCase());
       this.cryptoMentionsControl?.setValue(mentions.join(', '));
     }
+  }
+
+  getPostTags(post: Post): string[] {
+    if (!post || !post.tags) return [];
+    // Ensure it's an array, not an object
+    return Array.isArray(post.tags) ? post.tags : [];
+  }
+
+  getPostCryptoMentions(post: Post): string[] {
+    if (!post || !post.cryptoMentions) return [];
+    // Ensure it's an array, not an object
+    return Array.isArray(post.cryptoMentions) ? post.cryptoMentions : [];
   }
 
   parseTags(tagsString: string): string[] {
@@ -488,27 +504,19 @@ export class EditPostComponent implements OnInit, OnDestroy {
       isPublic: formValue.isPublic
     };
 
-    this.postService.updatePost(this.post.id, updateRequest).pipe(
+    this.firebasePostsService.updatePost(this.post.id, updateRequest).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (updatedPost) => {
+      next: () => {
         this.isSubmitting = false;
         // Navigate to the updated post
-        this.router.navigate(['/posts', updatedPost.id]);
+        this.router.navigate(['/posts', this.post!.id]);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isSubmitting = false;
         console.error('Error updating post:', error);
         
-        if (error.status === 400) {
-          this.submitError = 'Invalid post data. Please check your input and try again.';
-        } else if (error.status === 401) {
-          this.submitError = 'You must be logged in to edit a post.';
-        } else if (error.status === 403) {
-          this.submitError = 'You do not have permission to edit this post.';
-        } else {
-          this.submitError = 'Failed to update post. Please check your connection and try again.';
-        }
+        this.submitError = 'Failed to update post. Please check your connection and try again.';
       }
     });
   }
