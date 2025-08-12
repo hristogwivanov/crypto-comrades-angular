@@ -177,9 +177,12 @@ export class PostsComponent implements OnInit, OnDestroy {
   
   searchTerm: string = '';
   filterBy: string = 'all';
-  sortBy: string = 'createdAt';
-  loading: boolean = false;
+  sortBy: 'newest' | 'oldest' | 'most-liked' = 'newest';
+  loading = false;
   error: string | null = null;
+  selectedTag = '';
+  selectedCrypto = '';
+  totalCommentsCount = 0;
 
   // Make Array accessible in template
   Array = Array;
@@ -187,7 +190,7 @@ export class PostsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchSubject = new BehaviorSubject<string>('');
   private filterSubject = new BehaviorSubject<string>('all');
-  private sortSubject = new BehaviorSubject<string>('createdAt');
+  private sortSubject = new BehaviorSubject<string>('newest');
 
   constructor(
     private firebasePostsService: FirebasePostsService,
@@ -214,13 +217,31 @@ export class PostsComponent implements OnInit, OnDestroy {
     );
 
     this.posts$.subscribe({
-      next: () => {
+      next: (posts) => {
         this.loading = false;
+        // Load total comments count for all posts
+        this.loadTotalCommentsCount(posts);
       },
       error: (err) => {
         this.loading = false;
         this.error = 'Failed to load posts. Please try again.';
         console.error('Error loading posts:', err);
+      }
+    });
+  }
+
+  loadTotalCommentsCount(posts: Post[]): void {
+    this.firebasePostsService.getTotalCommentsCount(posts).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (count) => {
+        console.log('Comment count received:', count, 'Type:', typeof count);
+        // Force conversion to number to prevent object concatenation
+        this.totalCommentsCount = typeof count === 'number' ? count : 0;
+      },
+      error: (err) => {
+        console.error('Error loading comment counts:', err);
+        this.totalCommentsCount = 0;
       }
     });
   }
@@ -307,7 +328,9 @@ export class PostsComponent implements OnInit, OnDestroy {
   }
 
   getTotalComments(posts: Post[]): number {
-    return posts.reduce((total, post) => total + post.comments.length, 0);
+    // Dynamic comment counting happens in loadTotalComments()
+    // This returns the cached value
+    return this.totalCommentsCount;
   }
 
   getUniqueAuthors(posts: Post[]): number {

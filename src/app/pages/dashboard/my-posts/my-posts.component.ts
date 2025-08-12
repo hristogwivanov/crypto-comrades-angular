@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
-import { takeUntil, map, startWith, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { takeUntil, debounceTime, distinctUntilChanged, map, startWith } from 'rxjs/operators';
 import { FirebasePostsService } from '../../../services/firebase-posts.service';
 import { AuthService } from '../../../services/auth.service';
 import { Post } from '../../../models/post.interface';
@@ -83,7 +83,7 @@ import { User } from '../../../models/user.interface';
 
       <div class="error-message" *ngIf="error">
         <p>{{ error }}</p>
-        <button (click)="loadPosts()" class="retry-btn">Retry</button>
+        <button (click)="loadUserPosts()" class="retry-btn">Retry</button>
       </div>
 
       <div class="posts-section" *ngIf="filteredPosts$ | async as posts">
@@ -216,25 +216,29 @@ export class MyPostsComponent implements OnInit, OnDestroy {
   userPosts$!: Observable<Post[]>;
   filteredPosts$!: Observable<Post[]>;
   
+  posts: Post[] = [];
+  filteredPosts: Post[] = [];
   searchTerm: string = '';
   filterBy: string = 'all';
-  sortBy: string = 'createdAt';
-  loading: boolean = false;
+  sortBy: 'newest' | 'oldest' | 'most-liked' = 'newest';
+  loading = false;
   error: string | null = null;
+  totalCommentsCount = 0;
   deletingPostId: string | null = null;
-
+  
   private destroy$ = new Subject<void>();
   private searchSubject = new BehaviorSubject<string>('');
   private filterSubject = new BehaviorSubject<string>('all');
-  private sortSubject = new BehaviorSubject<string>('createdAt');
+  private sortSubject = new BehaviorSubject<string>('newest');
 
   constructor(
     private firebasePostsService: FirebasePostsService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.loadPosts();
+    this.loadUserPosts();
     this.setupFilters();
   }
 
@@ -243,23 +247,38 @@ export class MyPostsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadPosts(): void {
+  loadUserPosts(): void {
     this.loading = true;
     this.error = null;
     
-    // Use FirebasePostsService method that includes private posts for current user
     this.userPosts$ = this.firebasePostsService.getCurrentUserPosts().pipe(
       takeUntil(this.destroy$)
     );
 
     this.userPosts$.subscribe({
-      next: () => {
+      next: (posts) => {
         this.loading = false;
+        // Load total comments count for user's posts
+        this.loadTotalCommentsCount(posts);
       },
       error: (err) => {
         this.loading = false;
         this.error = 'Failed to load your posts. Please try again.';
         console.error('Error loading user posts:', err);
+      }
+    });
+  }
+
+  loadTotalCommentsCount(posts: Post[]): void {
+    this.firebasePostsService.getTotalCommentsCount(posts).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (count) => {
+        this.totalCommentsCount = count;
+      },
+      error: (err) => {
+        console.error('Error loading comment counts:', err);
+        this.totalCommentsCount = 0;
       }
     });
   }
@@ -354,7 +373,7 @@ export class MyPostsComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: () => {
         this.deletingPostId = null;
-        this.loadPosts(); // Reload posts after deletion
+        this.loadUserPosts(); // Reload posts after deletion
       },
       error: (err) => {
         this.deletingPostId = null;
@@ -367,10 +386,10 @@ export class MyPostsComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.searchTerm = '';
     this.filterBy = 'all';
-    this.sortBy = 'createdAt';
+    this.sortBy = 'newest';
     this.searchSubject.next('');
     this.filterSubject.next('all');
-    this.sortSubject.next('createdAt');
+    this.sortSubject.next('newest');
   }
 
   trackByPost(index: number, post: Post): string {
@@ -386,7 +405,9 @@ export class MyPostsComponent implements OnInit, OnDestroy {
   }
 
   getTotalComments(posts: Post[]): number {
-    return posts.reduce((total, post) => total + post.comments.length, 0);
+    // Dynamic comment counting happens in loadTotalComments()
+    // This returns the cached value
+    return this.totalCommentsCount;
   }
 
   getEmptyStateTitle(): string {

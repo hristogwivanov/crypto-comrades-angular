@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map, switchMap, combineLatest, of } from 'rxjs';
+import { Observable, map, switchMap, combineLatest, of, catchError } from 'rxjs';
 import { Post, Comment, PostInteraction } from '../models/post.interface';
 import { FirebaseService } from './firebase.service';
 import { FirebaseAuthService } from './firebase-auth.service';
@@ -189,6 +189,53 @@ export class FirebasePostsService {
       'comments',
       this.firebaseService.orderBy('createdAt', 'asc')
     );
+  }
+
+  /**
+   * Get comment count for a single post
+   */
+  getPostCommentCount(postId: string): Observable<number> {
+    return this.getPostComments(postId).pipe(
+      map(comments => comments.length)
+    );
+  }
+
+  /**
+   * Get total comment count for multiple posts - simplified approach
+   */
+  getTotalCommentsCount(posts: Post[]): Observable<number> {
+    if (!posts || posts.length === 0) return of(0);
+    
+    // Simple approach: count comments sequentially
+    let totalCount = 0;
+    let processedPosts = 0;
+    
+    return new Observable<number>(observer => {
+      posts.forEach(post => {
+        this.getPostComments(post.id).subscribe({
+          next: (comments) => {
+            totalCount += comments.length;
+            processedPosts++;
+            
+            // When all posts are processed, emit the total
+            if (processedPosts === posts.length) {
+              observer.next(totalCount);
+              observer.complete();
+            }
+          },
+          error: (err) => {
+            console.error(`Error getting comments for post ${post.id}:`, err);
+            processedPosts++;
+            
+            // Continue even if one post fails
+            if (processedPosts === posts.length) {
+              observer.next(totalCount);
+              observer.complete();
+            }
+          }
+        });
+      });
+    });
   }
 
   /**

@@ -19,7 +19,8 @@ import {
   QueryOrderByConstraint,
   QueryLimitConstraint,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  increment as firestoreIncrement
 } from '@angular/fire/firestore';
 import { Observable, from, map } from 'rxjs';
 
@@ -209,5 +210,9 @@ export class FirebaseService {
 
   limit(limitCount: number): QueryLimitConstraint {
     return firestoreLimit(limitCount);
+  }
+
+  increment(value: number = 1): any {
+    return firestoreIncrement(value);
   }
 }
