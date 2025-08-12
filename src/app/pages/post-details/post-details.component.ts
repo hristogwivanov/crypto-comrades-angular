@@ -443,7 +443,6 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        console.log('Post liked successfully');
         this.submittingInteraction = false;
         this.hasLiked = true;
         this.hasDisliked = false;
@@ -463,7 +462,6 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        console.log('Post disliked successfully');
         this.submittingInteraction = false;
         this.hasDisliked = true;
         this.hasLiked = false;
