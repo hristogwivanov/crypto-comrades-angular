@@ -235,8 +235,6 @@ export class PostsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (count) => {
-        console.log('Comment count received:', count, 'Type:', typeof count);
-        // Force conversion to number to prevent object concatenation
         this.totalCommentsCount = typeof count === 'number' ? count : 0;
       },
       error: (err) => {
