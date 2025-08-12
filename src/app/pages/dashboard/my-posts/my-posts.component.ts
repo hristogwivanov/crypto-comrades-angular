@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
 import { takeUntil, map, startWith, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-import { PostService } from '../../../services/post.service';
+import { FirebasePostsService } from '../../../services/firebase-posts.service';
 import { AuthService } from '../../../services/auth.service';
 import { Post } from '../../../models/post.interface';
 import { User } from '../../../models/user.interface';
@@ -230,7 +230,7 @@ export class MyPostsComponent implements OnInit, OnDestroy {
   private sortSubject = new BehaviorSubject<string>('createdAt');
 
   constructor(
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private authService: AuthService
   ) {}
 
@@ -248,17 +248,8 @@ export class MyPostsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     
-    this.userPosts$ = this.authService.currentUser$.pipe(
-      switchMap((currentUser: User | null) => {
-        if (!currentUser) {
-          this.error = 'You must be logged in to view your posts.';
-          this.loading = false;
-          return of([]);
-        }
-        return this.postService.getPosts().pipe(
-          map(posts => posts.filter(post => post.userId === currentUser.id))
-        );
-      }),
+    // Use FirebasePostsService method that includes private posts for current user
+    this.userPosts$ = this.firebasePostsService.getCurrentUserPosts().pipe(
       takeUntil(this.destroy$)
     );
 
@@ -359,7 +350,7 @@ export class MyPostsComponent implements OnInit, OnDestroy {
 
     this.deletingPostId = post.id;
     
-    this.postService.deletePost(post.id).pipe(
+    this.firebasePostsService.deletePost(post.id).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
