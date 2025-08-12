@@ -2,12 +2,12 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil, switchMap, catchError, take, filter, tap } from 'rxjs/operators';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { takeUntil, switchMap, catchError, take, filter, tap, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FirebasePostsService } from '../../services/firebase-posts.service';
 import { AuthService } from '../../services/auth.service';
-import { Post, Comment } from '../../models/post.interface';
+import { Post, type Comment } from '../../models/post.interface';
 
 @Component({
   selector: 'app-post-details',
@@ -189,6 +189,8 @@ import { Post, Comment } from '../../models/post.interface';
                 <div class="comment-stats">
                   <span (click)="likeComment(comment.id)" 
                         class="comment-stat-icon like-icon" 
+                        [class.liked]="hasLikedComment(comment.id)"
+                        [class.disabled]="submittingInteraction"
                         *ngIf="isAuthenticated$ | async"
                         title="Like this comment">
                     👍 {{ comment.likes }}
@@ -198,7 +200,9 @@ import { Post, Comment } from '../../models/post.interface';
                   </span>
                   
                   <span (click)="dislikeComment(comment.id)" 
-                        class="comment-stat-icon dislike-icon" 
+                        class="comment-stat-icon dislike-icon"
+                        [class.disliked]="hasDislikedComment(comment.id)"
+                        [class.disabled]="submittingInteraction" 
                         *ngIf="isAuthenticated$ | async"
                         title="Dislike this comment">
                     👎 {{ comment.dislikes }}
@@ -257,6 +261,8 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   hasLiked = false;
   hasDisliked = false;
   relatedPosts: Post[] = [];
+  
+  commentInteractions: { [commentId: string]: { type: 'like' | 'dislike' } | null } = {};
 
   private destroy$ = new Subject<void>();
 
@@ -290,7 +296,14 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
         }
 
         return this.firebasePostsService.getPostById(postId).pipe(
-          catchError(err => {
+          tap(post => {
+            this.loading = false;
+            if (post) {
+              this.loadCommentInteractions(post);
+              this.loadRelatedPosts(post);
+            }
+          }),
+          catchError((err: any) => {
             console.error('Error loading post details:', err);
             this.error = `Failed to load post. Please try again.`;
             this.loading = false;
@@ -300,33 +313,17 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       }),
       takeUntil(this.destroy$)
     );
-
-    this.post$.subscribe({
-      next: (post: any) => {
-        this.loading = false;
-        if (!post && !this.error) {
-          this.error = 'Post not found.';
-        } else if (post) {
-          this.loadRelatedPosts(post);
-        }
-      },
-      error: (err: any) => {
-        this.loading = false;
-        this.error = 'An unexpected error occurred while loading the post.';
-        console.error('Post details error:', err);
-      }
-    });
   }
 
   loadRelatedPosts(currentPost: Post): void {
     this.firebasePostsService.getAllPosts(6).pipe(
       takeUntil(this.destroy$),
-      catchError(err => {
+      catchError((err: any) => {
         console.error('Error loading related posts:', err);
         return of([]);
       })
     ).subscribe({
-      next: (posts) => {
+      next: (posts: Post[]) => {
         try {
           this.relatedPosts = posts
             .filter(p => p.id !== currentPost.id)
@@ -346,7 +343,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
           this.relatedPosts = [];
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Related posts subscription error:', err);
         this.relatedPosts = [];
       }
@@ -354,100 +351,86 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   canEditPost(post: Post): boolean {
-    let currentUser: any = null;
-    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
-      currentUser = user;
-    });
-    return currentUser !== null && currentUser.id === post.userId;
+    let user: any = null;
+    this.authService.getCurrentUser().pipe(take(1)).subscribe(u => user = u);
+    
+    return user && post.userId === user.id;
   }
 
   getPostParagraphs(content: string): string[] {
-    return content.split('\n\n').filter(p => p.trim().length > 0);
+    return content ? content.split('\n').filter(p => p.trim().length > 0) : [];
   }
 
   getPostTags(post: Post): string[] {
-    if (!post || !post.tags) {
+    if (!post || !post.content) {
       return [];
     }
-    
-    // Handle both arrays and objects with numeric keys
-    if (Array.isArray(post.tags)) {
-      return post.tags;
-    }
-    
-    // Convert object with numeric keys to array (Firestore issue)
-    if (typeof post.tags === 'object') {
-      return Object.values(post.tags).filter((val): val is string => typeof val === 'string');
-    }
-    
-    return [];
+
+    const hashtagMatches = post.content.match(/#\w+/g);
+    const contentTags = hashtagMatches ? hashtagMatches.map(tag => tag.slice(1)) : [];
+
+    const postTags = Array.isArray(post.tags) ? post.tags : [];
+
+    const allTags = [...postTags, ...contentTags];
+    return [...new Set(allTags)];
   }
 
   getPostCryptoMentions(post: Post): string[] {
-    if (!post || !post.cryptoMentions) {
+    if (!post || !post.content) {
       return [];
     }
-    
-    // Handle both arrays and objects with numeric keys
-    if (Array.isArray(post.cryptoMentions)) {
-      return post.cryptoMentions;
-    }
-    
-    // Convert object with numeric keys to array (Firestore issue)
-    if (typeof post.cryptoMentions === 'object') {
-      return Object.values(post.cryptoMentions).filter((val): val is string => typeof val === 'string');
-    }
-    
-    return [];
+
+    const cryptoMatches = post.content.match(/\$[A-Z]{2,10}/g);
+    const contentMentions = cryptoMatches ? cryptoMatches.map(mention => mention.slice(1)) : [];
+
+    const postCryptoMentions = Array.isArray(post.cryptoMentions) ? post.cryptoMentions : [];
+
+    const allMentions = [...postCryptoMentions, ...contentMentions];
+    return [...new Set(allMentions)];
   }
 
   getPostComments(post: Post): Comment[] {
-    if (!post || !post.comments) return [];
-    // Ensure it's an array, not an object
-    return Array.isArray(post.comments) ? post.comments : [];
+    return post.comments ? post.comments.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ) : [];
   }
 
   submitComment(): void {
-    console.log('submitComment called');
-    
     if (!this.newComment.trim()) {
-      console.log('Empty comment, returning');
       return;
     }
 
-    console.log('Comment content:', this.newComment.trim());
     this.submittingComment = true;
-    
-    // Get current user data first
+
     this.authService.getCurrentUser().pipe(
       take(1),
-      tap((user: any) => console.log('Current user from auth service:', user)),
-      filter((user): user is any => user !== null),
+      filter(user => user !== null),
       switchMap(user => {
+        const postId = this.getCurrentPostId();
         const commentData = {
           content: this.newComment.trim(),
-          userId: user.id,
-          postId: this.getCurrentPostId(),
-          author: { 
-            username: user.username || user.email?.split('@')[0] || 'Anonymous',
-            avatar: user.avatar || '/default-avatar.svg'
+          postId: postId,
+          userId: (user as any).id,
+          author: {
+            username: (user as any).username || (user as any).email,
+            avatar: (user as any).avatar
           }
         };
-        
-        console.log('Adding comment with data:', commentData);
-        return this.firebasePostsService.addComment(this.getCurrentPostId(), commentData);
+
+        return this.firebasePostsService.addComment(postId, commentData);
       }),
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (commentId) => {
-        console.log('Comment added successfully with ID:', commentId);
+      next: (commentId: string) => {
+        console.log('Comment added successfully:', commentId);
         this.newComment = '';
         this.submittingComment = false;
         this.loadPost();
       },
       error: (err: any) => {
-        console.error('Error submitting comment:', err);
+        console.error('Error adding comment:', err);
         this.submittingComment = false;
+        this.error = 'Failed to post comment. Please try again.';
       }
     });
   }
@@ -459,6 +442,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
+        console.log('Post liked successfully');
         this.submittingInteraction = false;
         this.hasLiked = true;
         this.hasDisliked = false;
@@ -478,6 +462,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
+        console.log('Post disliked successfully');
         this.submittingInteraction = false;
         this.hasDisliked = true;
         this.hasLiked = false;
@@ -491,7 +476,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   deletePost(postId: string): void {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this post?')) {
       return;
     }
 
@@ -501,6 +486,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
+        console.log('Post deleted successfully');
         this.router.navigate(['/posts']);
       },
       error: (err: any) => {
@@ -512,40 +498,36 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   likeComment(commentId: string): void {
-    this.post$.pipe(
-      take(1),
-      filter((post: Post | null): post is Post => post !== null)
-    ).subscribe(post => {
-      this.firebasePostsService.addComment(post.id, {
-        content: 'like',
-        userId: '',
-        postId: post.id,
-        author: { username: '', avatar: '' }
-      }).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: () => this.loadPost(),
-        error: (err) => console.error('Error liking comment:', err)
-      });
+    this.submittingInteraction = true;
+    
+    this.firebasePostsService.interactWithComment(this.getCurrentPostId(), commentId, 'like').pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.submittingInteraction = false;
+        this.loadPost();
+      },
+      error: (err: any) => {
+        console.error('Error liking comment:', err);
+        this.submittingInteraction = false;
+      }
     });
   }
 
   dislikeComment(commentId: string): void {
-    this.post$.pipe(
-      take(1),
-      filter((post: Post | null): post is Post => post !== null)
-    ).subscribe(post => {
-      this.firebasePostsService.addComment(post.id, {
-        content: 'dislike',
-        userId: '',
-        postId: post.id,
-        author: { username: '', avatar: '' }
-      }).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: () => this.loadPost(),
-        error: (err) => console.error('Error disliking comment:', err)
-      });
+    this.submittingInteraction = true;
+    
+    this.firebasePostsService.interactWithComment(this.getCurrentPostId(), commentId, 'dislike').pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.submittingInteraction = false;
+        this.loadPost();
+      },
+      error: (err: any) => {
+        console.error('Error disliking comment:', err);
+        this.submittingInteraction = false;
+      }
     });
   }
 
@@ -553,17 +535,50 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
     return comment.id;
   }
 
+  hasLikedComment(commentId: string): boolean {
+    return this.commentInteractions[commentId]?.type === 'like';
+  }
+
+  hasDislikedComment(commentId: string): boolean {
+    return this.commentInteractions[commentId]?.type === 'dislike';
+  }
+
+  loadCommentInteractions(post: Post): void {
+    this.authService.getCurrentUser().pipe(
+      take(1),
+      filter(user => user !== null),
+      switchMap(user => {
+        const commentIds = this.getPostComments(post).map(c => c.id);
+        const interactionRequests = commentIds.map(commentId =>
+          this.firebasePostsService.getUserCommentInteraction(post.id, commentId, (user as any).id).pipe(
+            map((interaction: any) => ({ commentId, interaction }))
+          )
+        );
+        
+        return combineLatest(interactionRequests.length > 0 ? interactionRequests : [of({ commentId: '', interaction: null })]);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (results: any[]) => {
+        this.commentInteractions = {};
+        results.forEach((result: any) => {
+          if (result.commentId && result.interaction) {
+            this.commentInteractions[result.commentId] = { type: result.interaction.type };
+          }
+        });
+      },
+      error: (err: any) => {
+        console.error('Error loading comment interactions:', err);
+      }
+    });
+  }
+
   canDeleteComment(comment: Comment, post: Post): boolean {
-    // Get current user synchronously
-    const currentUser = this.authService.getCurrentUser();
     let user: any = null;
-    
-    // Subscribe briefly to get current user
-    currentUser.pipe(take(1)).subscribe(u => user = u);
+    this.authService.getCurrentUser().pipe(take(1)).subscribe(u => user = u);
     
     if (!user) return false;
     
-    // User can delete their own comments or if they own the post
     return comment.userId === user.id || post.userId === user.id;
   }
 
@@ -580,7 +595,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       next: () => {
         console.log('Comment deleted successfully');
         this.deletingComment = false;
-        this.loadPost(); // Reload post to update comments
+        this.loadPost();
       },
       error: (err: any) => {
         console.error('Error deleting comment:', err);

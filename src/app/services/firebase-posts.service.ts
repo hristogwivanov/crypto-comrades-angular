@@ -208,6 +208,131 @@ export class FirebasePostsService {
     return this.firebaseService.delete(`posts/${postId}/comments`, commentId);
   }
 
+  /**
+   * Like or dislike a comment
+   */
+  interactWithComment(postId: string, commentId: string, type: 'like' | 'dislike'): Observable<void> {
+    return this.authService.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) throw new Error('User must be logged in to interact with comments');
+
+        // Check if user already interacted with this comment
+        return this.getUserCommentInteraction(postId, commentId, user.id).pipe(
+          switchMap(existingInteraction => {
+            if (existingInteraction) {
+              if (existingInteraction.type === type) {
+                // Remove the interaction (unlike/undislike)
+                return this.removeCommentInteraction(postId, commentId, user.id, existingInteraction.id);
+              } else {
+                // Update the interaction type
+                return this.updateCommentInteraction(postId, commentId, user.id, existingInteraction.id, type);
+              }
+            } else {
+              // Create new interaction
+              return this.createCommentInteraction(postId, commentId, user.id, type);
+            }
+          })
+        );
+      })
+    );
+  }
+
+  /**
+   * Get user's interaction with a comment
+   */
+  getUserCommentInteraction(postId: string, commentId: string, userId: string): Observable<any | null> {
+    return this.firebaseService.getAll<any>('comment_interactions',
+      this.firebaseService.where('postId', '==', postId),
+      this.firebaseService.where('commentId', '==', commentId),
+      this.firebaseService.where('userId', '==', userId)
+    ).pipe(
+      map(interactions => interactions.length > 0 ? interactions[0] : null)
+    );
+  }
+
+  /**
+   * Create comment interaction
+   */
+  private createCommentInteraction(postId: string, commentId: string, userId: string, type: 'like' | 'dislike'): Observable<void> {
+    const interaction = {
+      postId,
+      commentId,
+      userId,
+      type,
+      createdAt: new Date()
+    };
+
+    return this.firebaseService.add('comment_interactions', interaction).pipe(
+      switchMap(() => this.updateCommentCounts(postId, commentId, type, 1))
+    );
+  }
+
+  /**
+   * Update comment interaction
+   */
+  private updateCommentInteraction(postId: string, commentId: string, userId: string, interactionId: string, newType: 'like' | 'dislike'): Observable<void> {
+    return this.getUserCommentInteraction(postId, commentId, userId).pipe(
+      switchMap(existingInteraction => {
+        if (!existingInteraction) throw new Error('Interaction not found');
+        
+        const oldType = existingInteraction.type;
+        
+        return this.firebaseService.update('comment_interactions', interactionId, {
+          type: newType,
+          updatedAt: new Date()
+        }).pipe(
+          switchMap(() => combineLatest([
+            this.updateCommentCounts(postId, commentId, oldType, -1),
+            this.updateCommentCounts(postId, commentId, newType, 1)
+          ])),
+          map(() => void 0)
+        );
+      })
+    );
+  }
+
+  /**
+   * Remove comment interaction
+   */
+  private removeCommentInteraction(postId: string, commentId: string, userId: string, interactionId: string): Observable<void> {
+    return this.getUserCommentInteraction(postId, commentId, userId).pipe(
+      switchMap(interaction => {
+        if (!interaction) throw new Error('Interaction not found');
+        
+        return this.firebaseService.delete('comment_interactions', interactionId).pipe(
+          switchMap(() => this.updateCommentCounts(postId, commentId, interaction.type, -1))
+        );
+      })
+    );
+  }
+
+  /**
+   * Update comment like/dislike counts
+   */
+  private updateCommentCounts(postId: string, commentId: string, type: 'like' | 'dislike', increment: number): Observable<void> {
+    return this.getCommentById(postId, commentId).pipe(
+      switchMap(comment => {
+        if (!comment) throw new Error('Comment not found');
+        
+        const updates: Partial<Comment> = {};
+        if (type === 'like') {
+          updates.likes = Math.max(0, (comment.likes || 0) + increment);
+        } else {
+          updates.dislikes = Math.max(0, (comment.dislikes || 0) + increment);
+        }
+        
+        return this.updateComment(postId, commentId, updates);
+      })
+    );
+  }
+
+  /**
+   * Get comment by ID
+   */
+  private getCommentById(postId: string, commentId: string): Observable<Comment | null> {
+    return this.firebaseService.get<Comment>(`posts/${postId}/comments`, commentId);
+  }
+
   // INTERACTION OPERATIONS (LIKES/DISLIKES)
 
   /**
