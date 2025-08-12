@@ -52,8 +52,9 @@ export class FirebaseService {
     return from(getDoc(docRef)).pipe(
       map(docSnap => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as T;
-          return { ...data, id: docSnap.id } as T;
+          const data = docSnap.data();
+          const convertedData = this.convertTimestampsToDates(data);
+          return { ...convertedData, id: docSnap.id } as T;
         }
         return null;
       })
@@ -69,10 +70,14 @@ export class FirebaseService {
     
     return from(getDocs(q)).pipe(
       map(querySnapshot => 
-        querySnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        } as T))
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const convertedData = this.convertTimestampsToDates(data);
+          return {
+            ...convertedData,
+            id: doc.id
+          } as T;
+        })
       )
     );
   }
@@ -152,6 +157,30 @@ export class FirebaseService {
         converted[key] = Timestamp.fromDate(converted[key]);
       } else if (typeof converted[key] === 'object' && converted[key] !== null) {
         converted[key] = this.convertDatesToTimestamps(converted[key]);
+      }
+    });
+    
+    return converted;
+  }
+
+  private convertTimestampsToDates(data: any): any {
+    if (!data) return data;
+    
+    const converted = { ...data };
+    
+    Object.keys(converted).forEach(key => {
+      if (converted[key] && typeof converted[key] === 'object') {
+        // Check if it's a Firestore Timestamp
+        if (converted[key].toDate && typeof converted[key].toDate === 'function') {
+          converted[key] = converted[key].toDate();
+        } else if (converted[key].seconds && converted[key].nanoseconds) {
+          // Handle Firestore Timestamp format
+          converted[key] = new Timestamp(converted[key].seconds, converted[key].nanoseconds).toDate();
+        } else if (Array.isArray(converted[key])) {
+          converted[key] = converted[key].map((item: any) => this.convertTimestampsToDates(item));
+        } else {
+          converted[key] = this.convertTimestampsToDates(converted[key]);
+        }
       }
     });
     

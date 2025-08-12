@@ -34,7 +34,7 @@ import { Post, Comment } from '../../models/post.interface';
         <article class="post-content">
           <header class="post-header">
             <div class="author-info">
-              <img [src]="post.author.avatar || '/assets/default-avatar.svg'" 
+              <img [src]="post.author.avatar || '/default-avatar.svg'" 
                    [alt]="post.author.username" class="author-avatar">
               <div class="author-details">
                 <h4 class="author-name">{{ post.author.username }}</h4>
@@ -165,7 +165,7 @@ import { Post, Comment } from '../../models/post.interface';
           <div class="comments-list">
             <div class="comment" *ngFor="let comment of post.comments; trackBy: trackByComment">
               <div class="comment-header">
-                <img [src]="comment.author.avatar || '/assets/default-avatar.svg'" 
+                <img [src]="comment.author.avatar || '/default-avatar.svg'" 
                      [alt]="comment.author.username" class="comment-avatar">
                 <div class="comment-meta">
                   <span class="comment-author">{{ comment.author.username }}</span>

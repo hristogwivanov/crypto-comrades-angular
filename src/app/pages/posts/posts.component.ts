@@ -82,7 +82,7 @@ import { Post } from '../../models/post.interface';
         <div class="post-card" *ngFor="let post of posts; trackBy: trackByPost" [routerLink]="['/posts', post.id]">
           <div class="post-header">
             <div class="author-info">
-              <img [src]="post.author.avatar || '/assets/default-avatar.svg'" 
+              <img [src]="post.author.avatar || '/default-avatar.svg'" 
                    [alt]="post.author.username" class="author-avatar">
               <div class="author-details">
                 <span class="author-name">{{ post.author.username }}</span>
@@ -100,12 +100,12 @@ import { Post } from '../../models/post.interface';
             <h3 class="post-title">{{ post.title }}</h3>
             <p class="post-excerpt">{{ post.content | slice:0:200 }}...</p>
             
-            <div class="post-tags" *ngIf="post.tags.length > 0">
+            <div class="post-tags" *ngIf="post.tags && Array.isArray(post.tags) && post.tags.length > 0">
               <span class="tag" *ngFor="let tag of post.tags.slice(0, 3)">{{ tag }}</span>
               <span class="more-tags" *ngIf="post.tags.length > 3">+{{ post.tags.length - 3 }} more</span>
             </div>
 
-            <div class="crypto-mentions" *ngIf="post.cryptoMentions && post.cryptoMentions.length > 0">
+            <div class="crypto-mentions" *ngIf="post.cryptoMentions && Array.isArray(post.cryptoMentions) && post.cryptoMentions.length > 0">
               <span class="mention-label">Mentions:</span>
               <span class="crypto-mention" *ngFor="let mention of post.cryptoMentions.slice(0, 3)">
                 {{ mention | uppercase }}
@@ -180,6 +180,9 @@ export class PostsComponent implements OnInit, OnDestroy {
   sortBy: string = 'createdAt';
   loading: boolean = false;
   error: string | null = null;
+
+  // Make Array accessible in template
+  Array = Array;
 
   private destroy$ = new Subject<void>();
   private searchSubject = new BehaviorSubject<string>('');
