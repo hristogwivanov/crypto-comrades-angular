@@ -26,9 +26,22 @@
   align-items: center;
   text-decoration: none;
   color: white;
-  font-weight: 700;
-  font-size: 1.5rem;
-  transition: transform 0.2s ease;
+  font-family: 'Black Ops One', cursive;
+  font-weight: 400;
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.9);
+  text-shadow: 
+    -1px -1px 0px rgba(255, 255, 255, 0.8),
+    1px -1px 0px rgba(255, 255, 255, 0.8),
+    -1px 1px 0px rgba(255, 255, 255, 0.8),
+    1px 1px 0px rgba(255, 255, 255, 0.8),
+    0 0 10px rgba(255, 255, 255, 0.6),
+    0 0 20px rgba(139, 92, 246, 0.4),
+    0 0 30px rgba(167, 85, 247, 0.2);
+  transform: perspective(500px) rotateX(18deg);
+  transition: all 0.3s ease;
 }
 
 .brand-link:hover {
