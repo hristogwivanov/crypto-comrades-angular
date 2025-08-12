@@ -300,6 +300,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
             this.loading = false;
             if (post) {
               this.loadCommentInteractions(post);
+              this.loadPostInteractions(post);
               this.loadRelatedPosts(post);
             }
           }),
@@ -541,6 +542,32 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
   hasDislikedComment(commentId: string): boolean {
     return this.commentInteractions[commentId]?.type === 'dislike';
+  }
+
+  loadPostInteractions(post: Post): void {
+    this.authService.getCurrentUser().pipe(
+      take(1),
+      filter(user => user !== null),
+      switchMap(user => {
+        return this.firebasePostsService.getUserPostInteraction(post.id, (user as any).id);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (interaction: any) => {
+        if (interaction) {
+          this.hasLiked = interaction.type === 'like';
+          this.hasDisliked = interaction.type === 'dislike';
+        } else {
+          this.hasLiked = false;
+          this.hasDisliked = false;
+        }
+      },
+      error: (err: any) => {
+        console.error('Error loading post interactions:', err);
+        this.hasLiked = false;
+        this.hasDisliked = false;
+      }
+    });
   }
 
   loadCommentInteractions(post: Post): void {
