@@ -91,37 +91,44 @@ import { Post, Comment } from '../../models/post.interface';
 
             <div class="interaction-stats">
               <div class="stat-group">
-                <span class="stat-item">
+                <span class="stat-item clickable" 
+                      *ngIf="isAuthenticated$ | async"
+                      (click)="likePost(post.id)"
+                      [class.liked]="hasLiked"
+                      [class.disabled]="submittingInteraction"
+                      title="Like this post">
                   <span class="stat-icon">👍</span>
                   <span class="stat-count">{{ post.likes }}</span>
                   <span class="stat-label">Likes</span>
                 </span>
-                <span class="stat-item">
+                <span class="stat-item" *ngIf="!(isAuthenticated$ | async)">
+                  <span class="stat-icon">👍</span>
+                  <span class="stat-count">{{ post.likes }}</span>
+                  <span class="stat-label">Likes</span>
+                </span>
+                
+                <span class="stat-item clickable" 
+                      *ngIf="isAuthenticated$ | async"
+                      (click)="dislikePost(post.id)"
+                      [class.disliked]="hasDisliked"
+                      [class.disabled]="submittingInteraction"
+                      title="Dislike this post">
                   <span class="stat-icon">👎</span>
                   <span class="stat-count">{{ post.dislikes }}</span>
                   <span class="stat-label">Dislikes</span>
                 </span>
+                <span class="stat-item" *ngIf="!(isAuthenticated$ | async)">
+                  <span class="stat-icon">👎</span>
+                  <span class="stat-count">{{ post.dislikes }}</span>
+                  <span class="stat-label">Dislikes</span>
+                </span>
+                
                 <span class="stat-item">
                   <span class="stat-icon">💬</span>
                   <span class="stat-count">{{ getPostComments(post).length }}</span>
                   <span class="stat-label">Comments</span>
                 </span>
               </div>
-            </div>
-
-            <div class="interaction-buttons" *ngIf="isAuthenticated$ | async">
-              <button (click)="likePost(post.id)" 
-                      class="like-btn" 
-                      [class.liked]="hasLiked"
-                      [disabled]="submittingInteraction">
-                👍 Like
-              </button>
-              <button (click)="dislikePost(post.id)" 
-                      class="dislike-btn" 
-                      [class.disliked]="hasDisliked"
-                      [disabled]="submittingInteraction">
-                👎 Dislike
-              </button>
             </div>
 
             <div class="guest-interaction" *ngIf="!(isAuthenticated$ | async)">
@@ -180,12 +187,25 @@ import { Post, Comment } from '../../models/post.interface';
               
               <div class="comment-footer">
                 <div class="comment-stats">
-                  <span class="comment-likes">👍 {{ comment.likes }}</span>
-                  <span class="comment-dislikes">👎 {{ comment.dislikes }}</span>
-                </div>
-                <div class="comment-actions" *ngIf="isAuthenticated$ | async">
-                  <button (click)="likeComment(comment.id)" class="comment-like-btn">Like</button>
-                  <button (click)="dislikeComment(comment.id)" class="comment-dislike-btn">Dislike</button>
+                  <span (click)="likeComment(comment.id)" 
+                        class="comment-stat-icon like-icon" 
+                        *ngIf="isAuthenticated$ | async"
+                        title="Like this comment">
+                    👍 {{ comment.likes }}
+                  </span>
+                  <span class="comment-stat-display" *ngIf="!(isAuthenticated$ | async)">
+                    👍 {{ comment.likes }}
+                  </span>
+                  
+                  <span (click)="dislikeComment(comment.id)" 
+                        class="comment-stat-icon dislike-icon" 
+                        *ngIf="isAuthenticated$ | async"
+                        title="Dislike this comment">
+                    👎 {{ comment.dislikes }}
+                  </span>
+                  <span class="comment-stat-display" *ngIf="!(isAuthenticated$ | async)">
+                    👎 {{ comment.dislikes }}
+                  </span>
                 </div>
               </div>
             </div>

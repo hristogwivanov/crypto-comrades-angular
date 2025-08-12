@@ -299,7 +299,33 @@
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.stat-item.clickable:hover {
+  opacity: 0.8;
+}
+
+.stat-item.clickable.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.stat-item.clickable.liked {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.stat-item.clickable.disliked {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .interaction-buttons {
@@ -503,6 +529,15 @@
   gap: 1rem;
   font-size: 0.875rem;
   color: #64748b;
+}
+
+.comment-stat-icon {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.comment-stat-icon:hover {
+  opacity: 0.8;
 }
 
 .comment-actions {
