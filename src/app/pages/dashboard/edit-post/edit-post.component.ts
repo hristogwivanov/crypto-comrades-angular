@@ -433,9 +433,21 @@ export class EditPostComponent implements OnInit, OnDestroy {
   }
 
   getPostTags(post: Post): string[] {
-    if (!post || !post.tags) return [];
-    // Ensure it's an array, not an object
-    return Array.isArray(post.tags) ? post.tags : [];
+    if (!post || !post.tags) {
+      return [];
+    }
+    
+    // Handle both arrays and objects with numeric keys
+    if (Array.isArray(post.tags)) {
+      return post.tags;
+    }
+    
+    // Convert object with numeric keys to array (Firestore issue)
+    if (typeof post.tags === 'object') {
+      return Object.values(post.tags).filter((val): val is string => typeof val === 'string');
+    }
+    
+    return [];
   }
 
   getPostCryptoMentions(post: Post): string[] {
