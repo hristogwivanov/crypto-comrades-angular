@@ -20,14 +20,24 @@ export class FirebasePostsService {
    * Create a new post
    */
   createPost(postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'dislikes' | 'comments'>): Observable<string> {
-    const post: Omit<Post, 'id'> = {
-      ...postData,
+    const post: any = {
+      title: postData.title,
+      content: postData.content,
+      tags: postData.tags,
+      cryptoMentions: postData.cryptoMentions,
+      isPublic: postData.isPublic,
+      userId: postData.userId,
+      author: postData.author,
       likes: 0,
       dislikes: 0,
       comments: [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
+    if (postData.imageUrl) {
+      post.imageUrl = postData.imageUrl;
+    }
 
     return this.firebaseService.add('posts', post);
   }

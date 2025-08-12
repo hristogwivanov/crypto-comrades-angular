@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil, switchMap, catchError, take, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { PostService } from '../../services/post.service';
+import { FirebasePostsService } from '../../services/firebase-posts.service';
 import { AuthService } from '../../services/auth.service';
 import { Post, Comment } from '../../models/post.interface';
 
@@ -232,7 +232,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private authService: AuthService
   ) {}
 
@@ -258,7 +258,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
           return of(null);
         }
 
-        return this.postService.getPostById(postId).pipe(
+        return this.firebasePostsService.getPostById(postId).pipe(
           catchError(err => {
             console.error('Error loading post details:', err);
             this.error = `Failed to load post. Please try again.`;
@@ -271,7 +271,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
     );
 
     this.post$.subscribe({
-      next: (post) => {
+      next: (post: any) => {
         this.loading = false;
         if (!post && !this.error) {
           this.error = 'Post not found.';
@@ -279,7 +279,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
           this.loadRelatedPosts(post);
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.loading = false;
         this.error = 'An unexpected error occurred while loading the post.';
         console.error('Post details error:', err);
@@ -288,16 +288,12 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   loadRelatedPosts(currentPost: Post): void {
-    this.postService.getPosts().pipe(
+    this.firebasePostsService.getAllPosts(6).pipe(
       takeUntil(this.destroy$)
     ).subscribe(posts => {
-      this.relatedPosts = posts
-        .filter(post => 
-          post.id !== currentPost.id && 
-          (post.tags.some(tag => currentPost.tags.includes(tag)) ||
-           (post.cryptoMentions && currentPost.cryptoMentions && 
-            post.cryptoMentions.some(mention => currentPost.cryptoMentions!.includes(mention))))
-        )
+      this.relatedPosts = (posts as any[]).filter((p: any) => p.id !== currentPost.id)
+        .filter((p: any) => currentPost.tags.some((tag: any) => p.tags.includes(tag)))
+        .filter((p: any) => currentPost.cryptoMentions?.some((mention: any) => p.cryptoMentions?.includes(mention)))
         .slice(0, 3);
     });
   }
@@ -319,7 +315,12 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
     this.submittingComment = true;
     
-    this.postService.addComment(this.getCurrentPostId(), this.newComment.trim()).pipe(
+    this.firebasePostsService.addComment(this.getCurrentPostId(), {
+      content: this.newComment.trim(),
+      userId: '',
+      postId: this.getCurrentPostId(),
+      author: { username: '', avatar: '' }
+    }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
@@ -327,7 +328,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
         this.submittingComment = false;
         this.loadPost();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error submitting comment:', err);
         this.submittingComment = false;
       }
@@ -337,7 +338,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   likePost(postId: string): void {
     this.submittingInteraction = true;
     
-    this.postService.likePost(postId).pipe(
+    this.firebasePostsService.interactWithPost(postId, 'like').pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
@@ -346,7 +347,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
         this.hasDisliked = false;
         this.loadPost();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error liking post:', err);
         this.submittingInteraction = false;
       }
@@ -356,7 +357,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   dislikePost(postId: string): void {
     this.submittingInteraction = true;
     
-    this.postService.dislikePost(postId).pipe(
+    this.firebasePostsService.interactWithPost(postId, 'dislike').pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
@@ -365,7 +366,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
         this.hasLiked = false;
         this.loadPost();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error disliking post:', err);
         this.submittingInteraction = false;
       }
@@ -379,13 +380,13 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
     this.deletingPost = true;
     
-    this.postService.deletePost(postId).pipe(
+    this.firebasePostsService.deletePost(postId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
         this.router.navigate(['/posts']);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error deleting post:', err);
         this.deletingPost = false;
         this.error = 'Failed to delete post. Please try again.';
@@ -398,7 +399,12 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       take(1),
       filter((post: Post | null): post is Post => post !== null)
     ).subscribe(post => {
-      this.postService.likeComment(post.id, commentId).pipe(
+      this.firebasePostsService.addComment(post.id, {
+        content: 'like',
+        userId: '',
+        postId: post.id,
+        author: { username: '', avatar: '' }
+      }).pipe(
         takeUntil(this.destroy$)
       ).subscribe({
         next: () => this.loadPost(),
@@ -412,7 +418,12 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       take(1),
       filter((post: Post | null): post is Post => post !== null)
     ).subscribe(post => {
-      this.postService.dislikeComment(post.id, commentId).pipe(
+      this.firebasePostsService.addComment(post.id, {
+        content: 'dislike',
+        userId: '',
+        postId: post.id,
+        author: { username: '', avatar: '' }
+      }).pipe(
         takeUntil(this.destroy$)
       ).subscribe({
         next: () => this.loadPost(),

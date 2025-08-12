@@ -4,10 +4,10 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { PostService } from '../../../services/post.service';
+import { FirebasePostsService } from '../../../services/firebase-posts.service';
 import { CryptoService } from '../../../services/crypto.service';
 import { AuthService } from '../../../services/auth.service';
-import { CreatePostRequest } from '../../../models/post.interface';
+import { Post } from '../../../models/post.interface';
 import { CryptoCurrency } from '../../../models/crypto.interface';
 
 @Component({
@@ -251,12 +251,13 @@ export class CreatePostComponent implements OnInit, OnDestroy {
   parsedCryptoMentions: string[] = [];
   cryptoSuggestions: CryptoCurrency[] = [];
   currentUser$!: Observable<any>;
+  currentUser: any = null;
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private cryptoService: CryptoService,
     private authService: AuthService,
     private router: Router
@@ -273,6 +274,9 @@ export class CreatePostComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentUser$ = this.authService.currentUser$;
+    this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
+      this.currentUser = user;
+    });
     this.setupFormWatchers();
     this.loadCryptoSuggestions();
   }
@@ -365,24 +369,16 @@ export class CreatePostComponent implements OnInit, OnDestroy {
     this.submitError = null;
 
     const formValue = this.createPostForm.value;
-    const createPostRequest: CreatePostRequest = {
-      title: formValue.title.trim(),
-      content: formValue.content.trim(),
-      imageUrl: formValue.imageUrl?.trim() || undefined,
-      tags: this.parsedTags,
-      cryptoMentions: this.parsedCryptoMentions.length > 0 ? this.parsedCryptoMentions : undefined,
-      isPublic: formValue.isPublic
-    };
+    const postData = this.buildPostData(formValue);
 
-    this.postService.createPost(createPostRequest).pipe(
+    this.firebasePostsService.createPost(postData).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (post) => {
+      next: (postId: string) => {
         this.isSubmitting = false;
-        // Navigate to the created post
-        this.router.navigate(['/posts', post.id]);
+        this.router.navigate(['/posts', postId]);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isSubmitting = false;
         console.error('Error creating post:', error);
         
@@ -395,6 +391,37 @@ export class CreatePostComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  private buildPostData(formValue: any): any {
+    const postData: any = {
+      title: formValue.title.trim(),
+      content: formValue.content.trim(),
+      tags: this.parsedTags,
+      cryptoMentions: this.parsedCryptoMentions.length > 0 ? this.parsedCryptoMentions : [],
+      isPublic: formValue.isPublic,
+      userId: this.currentUser?.id || '',
+      author: this.createAuthorObject()
+    };
+
+    if (formValue.imageUrl?.trim()) {
+      postData.imageUrl = formValue.imageUrl.trim();
+    }
+
+    return postData;
+  }
+
+  private createAuthorObject(): any {
+    const authorObj: any = {
+      id: this.currentUser?.id || '',
+      username: this.currentUser?.username || ''
+    };
+    
+    if (this.currentUser?.avatar) {
+      authorObj.avatar = this.currentUser.avatar;
+    }
+    
+    return authorObj;
   }
 
   private markFormGroupTouched(): void {

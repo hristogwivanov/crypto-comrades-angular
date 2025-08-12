@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith, map } from 'rxjs/operators';
-import { PostService } from '../../services/post.service';
+import { FirebasePostsService } from '../../services/firebase-posts.service';
 import { AuthService } from '../../services/auth.service';
 import { Post } from '../../models/post.interface';
 
@@ -187,7 +187,7 @@ export class PostsComponent implements OnInit, OnDestroy {
   private sortSubject = new BehaviorSubject<string>('createdAt');
 
   constructor(
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private authService: AuthService
   ) {}
 
@@ -206,7 +206,7 @@ export class PostsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     
-    this.posts$ = this.postService.getPosts().pipe(
+    this.posts$ = this.firebasePostsService.getAllPosts().pipe(
       takeUntil(this.destroy$)
     );
 
