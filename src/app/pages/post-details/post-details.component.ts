@@ -74,9 +74,11 @@ import { Post, Comment } from '../../models/post.interface';
                 <span class="tag" *ngFor="let tag of getPostTags(post)">{{ tag }}</span>
               </div>
             </div>
+          </div>
 
+          <footer class="post-footer">
             <div class="crypto-mentions" *ngIf="getPostCryptoMentions(post).length > 0">
-              <h4>Cryptocurrency Mentions:</h4>
+              <h4>Crypto Mentions:</h4>
               <div class="mentions-list">
                 <a class="crypto-mention" 
                    *ngFor="let mention of getPostCryptoMentions(post)"
@@ -85,9 +87,7 @@ import { Post, Comment } from '../../models/post.interface';
                 </a>
               </div>
             </div>
-          </div>
 
-          <footer class="post-footer">
             <div class="interaction-stats">
               <div class="stat-group">
                 <span class="stat-item">
@@ -341,9 +341,21 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   getPostCryptoMentions(post: Post): string[] {
-    if (!post || !post.cryptoMentions) return [];
-    // Ensure it's an array, not an object
-    return Array.isArray(post.cryptoMentions) ? post.cryptoMentions : [];
+    if (!post || !post.cryptoMentions) {
+      return [];
+    }
+    
+    // Handle both arrays and objects with numeric keys
+    if (Array.isArray(post.cryptoMentions)) {
+      return post.cryptoMentions;
+    }
+    
+    // Convert object with numeric keys to array (Firestore issue)
+    if (typeof post.cryptoMentions === 'object') {
+      return Object.values(post.cryptoMentions).filter((val): val is string => typeof val === 'string');
+    }
+    
+    return [];
   }
 
   getPostComments(post: Post): Comment[] {
