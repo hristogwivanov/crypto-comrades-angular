@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { map, take, catchError } from 'rxjs/operators';
 import { CryptoService } from '../../services/crypto.service';
-import { PostService } from '../../services/post.service';
+import { FirebasePostsService } from '../../services/firebase-posts.service';
 import { AuthService } from '../../services/auth.service';
 import { CryptoCurrency } from '../../models/crypto.interface';
 import { Post } from '../../models/post.interface';
@@ -116,7 +116,7 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private cryptoService: CryptoService,
-    private postService: PostService,
+    private firebasePostsService: FirebasePostsService,
     private authService: AuthService
   ) {}
 
@@ -132,8 +132,7 @@ export class HomeComponent implements OnInit {
       })
     );
 
-    this.recentPosts$ = this.postService.getPosts().pipe(
-      map(posts => posts.slice(0, 3)),
+    this.recentPosts$ = this.firebasePostsService.getAllPosts(3).pipe(
       catchError((error: any) => {
         console.warn('Failed to load posts data:', error);
         return of([]); // Return empty array on error

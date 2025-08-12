@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { 
   Firestore, 
   collection, 
@@ -10,9 +10,9 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  where, 
-  orderBy, 
-  limit,
+  where as firestoreWhere, 
+  orderBy as firestoreOrderBy, 
+  limit as firestoreLimit,
   DocumentData,
   QueryConstraint,
   QueryFieldFilterConstraint,
@@ -159,7 +159,16 @@ export class FirebaseService {
   }
 
 
-  where = where;
-  orderBy = orderBy;
-  limit = limit;
+  // Helper methods to maintain injection context
+  where(field: string, opStr: any, value: any): QueryFieldFilterConstraint {
+    return firestoreWhere(field, opStr, value);
+  }
+
+  orderBy(field: string, directionStr?: 'asc' | 'desc'): QueryOrderByConstraint {
+    return firestoreOrderBy(field, directionStr);
+  }
+
+  limit(limitCount: number): QueryLimitConstraint {
+    return firestoreLimit(limitCount);
+  }
 }
