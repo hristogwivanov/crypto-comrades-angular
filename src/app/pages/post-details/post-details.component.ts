@@ -68,18 +68,18 @@ import { Post, Comment } from '../../models/post.interface';
               <p *ngFor="let paragraph of getPostParagraphs(post.content)">{{ paragraph }}</p>
             </div>
 
-            <div class="post-tags" *ngIf="post.tags.length > 0">
+            <div class="post-tags" *ngIf="getPostTags(post).length > 0">
               <h4>Tags:</h4>
               <div class="tags-list">
-                <span class="tag" *ngFor="let tag of post.tags">{{ tag }}</span>
+                <span class="tag" *ngFor="let tag of getPostTags(post)">{{ tag }}</span>
               </div>
             </div>
 
-            <div class="crypto-mentions" *ngIf="post.cryptoMentions && post.cryptoMentions.length > 0">
+            <div class="crypto-mentions" *ngIf="getPostCryptoMentions(post).length > 0">
               <h4>Cryptocurrency Mentions:</h4>
               <div class="mentions-list">
                 <a class="crypto-mention" 
-                   *ngFor="let mention of post.cryptoMentions"
+                   *ngFor="let mention of getPostCryptoMentions(post)"
                    [routerLink]="['/crypto', mention.toLowerCase()]">
                   {{ mention | uppercase }}
                 </a>
@@ -102,7 +102,7 @@ import { Post, Comment } from '../../models/post.interface';
                 </span>
                 <span class="stat-item">
                   <span class="stat-icon">💬</span>
-                  <span class="stat-count">{{ post.comments.length }}</span>
+                  <span class="stat-count">{{ getPostComments(post).length }}</span>
                   <span class="stat-label">Comments</span>
                 </span>
               </div>
@@ -134,7 +134,7 @@ import { Post, Comment } from '../../models/post.interface';
 
         <section class="comments-section">
           <div class="comments-header">
-            <h3>Comments ({{ post.comments.length }})</h3>
+            <h3>Comments ({{ getPostComments(post).length }})</h3>
           </div>
 
           <div class="comment-form" *ngIf="isAuthenticated$ | async">
@@ -163,7 +163,7 @@ import { Post, Comment } from '../../models/post.interface';
           </div>
 
           <div class="comments-list">
-            <div class="comment" *ngFor="let comment of post.comments; trackBy: trackByComment">
+            <div class="comment" *ngFor="let comment of getPostComments(post); trackBy: trackByComment">
               <div class="comment-header">
                 <img [src]="comment.author.avatar || '/default-avatar.svg'" 
                      [alt]="comment.author.username" class="comment-avatar">
@@ -189,7 +189,7 @@ import { Post, Comment } from '../../models/post.interface';
               </div>
             </div>
 
-            <div class="no-comments" *ngIf="post.comments.length === 0">
+            <div class="no-comments" *ngIf="getPostComments(post).length === 0">
               <p>No comments yet. Be the first to share your thoughts!</p>
             </div>
           </div>
@@ -289,12 +289,36 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
   loadRelatedPosts(currentPost: Post): void {
     this.firebasePostsService.getAllPosts(6).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(posts => {
-      this.relatedPosts = (posts as any[]).filter((p: any) => p.id !== currentPost.id)
-        .filter((p: any) => currentPost.tags.some((tag: any) => p.tags.includes(tag)))
-        .filter((p: any) => currentPost.cryptoMentions?.some((mention: any) => p.cryptoMentions?.includes(mention)))
-        .slice(0, 3);
+      takeUntil(this.destroy$),
+      catchError(err => {
+        console.error('Error loading related posts:', err);
+        return of([]);
+      })
+    ).subscribe({
+      next: (posts) => {
+        try {
+          this.relatedPosts = posts
+            .filter(p => p.id !== currentPost.id)
+            .filter(p => {
+              const currentTags = this.getPostTags(currentPost);
+              const postTags = this.getPostTags(p);
+              return currentTags.some(tag => postTags.includes(tag));
+            })
+            .filter(p => {
+              const currentMentions = this.getPostCryptoMentions(currentPost);
+              const postMentions = this.getPostCryptoMentions(p);
+              return currentMentions.length > 0 && currentMentions.some(mention => postMentions.includes(mention));
+            })
+            .slice(0, 3);
+        } catch (error) {
+          console.error('Error filtering related posts:', error);
+          this.relatedPosts = [];
+        }
+      },
+      error: (err) => {
+        console.error('Related posts subscription error:', err);
+        this.relatedPosts = [];
+      }
     });
   }
 
@@ -308,6 +332,24 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
   getPostParagraphs(content: string): string[] {
     return content.split('\n\n').filter(p => p.trim().length > 0);
+  }
+
+  getPostTags(post: Post): string[] {
+    if (!post || !post.tags) return [];
+    // Ensure it's an array, not an object
+    return Array.isArray(post.tags) ? post.tags : [];
+  }
+
+  getPostCryptoMentions(post: Post): string[] {
+    if (!post || !post.cryptoMentions) return [];
+    // Ensure it's an array, not an object
+    return Array.isArray(post.cryptoMentions) ? post.cryptoMentions : [];
+  }
+
+  getPostComments(post: Post): Comment[] {
+    if (!post || !post.comments) return [];
+    // Ensure it's an array, not an object
+    return Array.isArray(post.comments) ? post.comments : [];
   }
 
   submitComment(): void {
