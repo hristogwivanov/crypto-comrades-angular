@@ -182,7 +182,28 @@ import { Post, type Comment } from '../../models/post.interface';
               </div>
               
               <div class="comment-body">
-                <p>{{ comment.content }}</p>
+                <p *ngIf="editingCommentId !== comment.id">{{ comment.content }}</p>
+                
+                <div class="comment-edit-form" *ngIf="editingCommentId === comment.id">
+                  <textarea [(ngModel)]="editCommentContent" 
+                           class="edit-comment-textarea"
+                           placeholder="Edit your comment..."
+                           rows="3"></textarea>
+                  <div class="edit-comment-actions" style="margin-bottom: 1rem;">
+                    <button class="btn btn-primary btn-sm" 
+                            (click)="updateComment(comment.id)"
+                            [disabled]="!editCommentContent.trim() || updatingComment"
+                            style="margin-right: 0.75rem; margin-top: 0.5rem;">
+                      {{ updatingComment ? 'Updating...' : 'Update' }}
+                    </button>
+                    <button class="btn btn-secondary btn-sm" 
+                            (click)="cancelEditComment()"
+                            [disabled]="updatingComment"
+                            style="margin-top: 0.5rem;">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <div class="comment-footer">
@@ -212,11 +233,20 @@ import { Post, type Comment } from '../../models/post.interface';
                   </span>
                 </div>
                 
-                <div class="comment-actions" *ngIf="canDeleteComment(comment, post)">
+                <div class="comment-actions" *ngIf="canDeleteComment(comment, post) || canEditComment(comment)">
+                  <button class="edit-btn" 
+                          (click)="startEditComment(comment)" 
+                          title="Edit comment"
+                          [disabled]="updatingComment || editingCommentId === comment.id"
+                          *ngIf="canEditComment(comment) && editingCommentId !== comment.id">
+                    Edit
+                  </button>
+                  
                   <button class="delete-btn" 
                           (click)="deleteComment(comment.id)" 
                           title="Delete comment"
-                          [disabled]="deletingComment">
+                          [disabled]="deletingComment"
+                          *ngIf="canDeleteComment(comment, post)">
                     Delete
                   </button>
                 </div>
@@ -257,6 +287,10 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   submittingInteraction = false;
   deletingPost = false;
   deletingComment = false;
+  
+  editingCommentId: string | null = null;
+  editCommentContent: string = '';
+  updatingComment = false;
   
   hasLiked = false;
   hasDisliked = false;
@@ -626,6 +660,50 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
         console.error('Error deleting comment:', err);
         this.deletingComment = false;
         alert('Failed to delete comment. Please try again.');
+      }
+    });
+  }
+
+  canEditComment(comment: Comment): boolean {
+    let user: any = null;
+    this.authService.getCurrentUser().pipe(take(1)).subscribe(u => user = u);
+    
+    if (!user) return false;
+    
+    return comment.userId === user.id;
+  }
+
+  startEditComment(comment: Comment): void {
+    this.editingCommentId = comment.id;
+    this.editCommentContent = comment.content;
+  }
+
+  cancelEditComment(): void {
+    this.editingCommentId = null;
+    this.editCommentContent = '';
+  }
+
+  updateComment(commentId: string): void {
+    if (!this.editCommentContent.trim()) {
+      alert('Please enter a comment.');
+      return;
+    }
+
+    this.updatingComment = true;
+    
+    this.firebasePostsService.updateComment(this.getCurrentPostId(), commentId, { content: this.editCommentContent.trim() }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.updatingComment = false;
+        this.editingCommentId = null;
+        this.editCommentContent = '';
+        this.loadPost();
+      },
+      error: (err: any) => {
+        console.error('Error updating comment:', err);
+        this.updatingComment = false;
+        alert('Failed to update comment. Please try again.');
       }
     });
   }
