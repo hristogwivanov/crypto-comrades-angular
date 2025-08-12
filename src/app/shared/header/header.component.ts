@@ -40,10 +40,10 @@ import { User } from '../../models/user.interface';
               </div>
               
               <div class="dropdown-menu" [class.show]="isUserMenuOpen">
-                <a routerLink="/dashboard" class="dropdown-item">Dashboard</a>
-                <a routerLink="/dashboard/portfolio" class="dropdown-item">My Portfolio</a>
-                <a routerLink="/dashboard/my-posts" class="dropdown-item">My Posts</a>
-                <a routerLink="/dashboard/profile" class="dropdown-item">Profile</a>
+                <a routerLink="/dashboard" class="dropdown-item" (click)="closeUserMenu()">Dashboard</a>
+                <a routerLink="/dashboard/portfolio" class="dropdown-item" (click)="closeUserMenu()">My Portfolio</a>
+                <a routerLink="/dashboard/my-posts" class="dropdown-item" (click)="closeUserMenu()">My Posts</a>
+                <a routerLink="/dashboard/profile" class="dropdown-item" (click)="closeUserMenu()">Profile</a>
                 <hr class="dropdown-divider">
                 <button (click)="logout()" class="dropdown-item logout-btn">Logout</button>
               </div>
@@ -88,11 +88,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.authService.isAuthenticated$
       .pipe(takeUntil(this.destroy$))
       .subscribe(authenticated => this.isAuthenticated = authenticated);
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', this.onDocumentClick.bind(this));
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    document.removeEventListener('click', this.onDocumentClick.bind(this));
   }
 
   toggleMenu(): void {
@@ -101,6 +105,20 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   toggleUserMenu(): void {
     this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    const userMenu = target.closest('.user-menu');
+    
+    // Close dropdown if click is outside user menu
+    if (!userMenu && this.isUserMenuOpen) {
+      this.isUserMenuOpen = false;
+    }
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen = false;
   }
 
   logout(): void {
