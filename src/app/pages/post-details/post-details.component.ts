@@ -38,9 +38,9 @@ import { Post, type Comment } from '../../models/post.interface';
                    [alt]="post.author.username" class="author-avatar">
               <div class="author-details">
                 <h4 class="author-name">{{ post.author.username }}</h4>
-                <time class="post-date">{{ post.createdAt | date:'full' }}</time>
+                <time class="post-date">{{ post.createdAt | date:'MMM d, yyyy, hh:mm a' }}</time>
                 <span class="last-updated" *ngIf="post.updatedAt !== post.createdAt">
-                  Updated: {{ post.updatedAt | date:'short' }}
+                  Updated: {{ post.updatedAt | date:'MMM d, yyyy, hh:mm a' }}
                 </span>
               </div>
             </div>
@@ -177,7 +177,7 @@ import { Post, type Comment } from '../../models/post.interface';
                      [alt]="comment.author.username" class="comment-avatar">
                 <div class="comment-meta">
                   <span class="comment-author">{{ comment.author.username }}</span>
-                  <time class="comment-date">{{ comment.createdAt | date:'short' }}</time>
+                  <time class="comment-date">{{ comment.createdAt | date:'MMM d, yyyy, hh:mm a' }}</time>
                 </div>
               </div>
               
@@ -237,7 +237,7 @@ import { Post, type Comment } from '../../models/post.interface';
                [routerLink]="['/posts', relatedPost.id]">
               <h4>{{ relatedPost.title }}</h4>
               <p>by {{ relatedPost.author.username }}</p>
-              <span class="related-post-date">{{ relatedPost.createdAt | date:'short' }}</span>
+              <span class="related-post-date">{{ relatedPost.createdAt | date:'MMM d, yyyy, hh:mm a' }}</span>
             </a>
           </div>
         </section>
