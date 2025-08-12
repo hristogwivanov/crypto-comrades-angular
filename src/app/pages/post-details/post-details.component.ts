@@ -27,7 +27,7 @@ import { Post, type Comment } from '../../models/post.interface';
       <div class="error-message" *ngIf="error">
         <h2>Error Loading Post</h2>
         <p>{{ error }}</p>
-        <button (click)="loadPost()" class="retry-btn">Try Again</button>
+        <button (click)="loadPost()" class="btn btn-primary btn-lg retry-btn">Try Again</button>
       </div>
 
       <div class="post-details" *ngIf="post$ | async as post">
@@ -50,8 +50,8 @@ import { Post, type Comment } from '../../models/post.interface';
                 Private
               </span>
               <div class="post-actions" *ngIf="canEditPost(post)">
-                <a [routerLink]="['/dashboard/edit-post', post.id]" class="edit-btn">Edit</a>
-                <button (click)="deletePost(post.id)" class="delete-btn" 
+                <a [routerLink]="['/dashboard/edit-post', post.id]" class="btn btn-secondary edit-btn">Edit</a>
+                <button (click)="deletePost(post.id)" class="btn btn-danger delete-btn" 
                         [disabled]="deletingPost">Delete</button>
               </div>
             </div>
@@ -162,7 +162,7 @@ import { Post, type Comment } from '../../models/post.interface';
               </div>
               <div class="form-actions">
                 <button type="submit" 
-                        class="btn btn-primary" 
+                        class="btn btn-primary btn-lg" 
                         [disabled]="commentForm.invalid || submittingComment">
                   {{ submittingComment ? 'Posting...' : 'Post Comment' }}
                 </button>
@@ -190,13 +190,13 @@ import { Post, type Comment } from '../../models/post.interface';
                            placeholder="Edit your comment..."
                            rows="3"></textarea>
                   <div class="edit-comment-actions" style="margin-bottom: 1rem;">
-                    <button class="btn btn-primary btn-sm" 
+                    <button class="btn btn-primary" 
                             (click)="updateComment(comment.id)"
                             [disabled]="!editCommentContent.trim() || updatingComment"
                             style="margin-right: 0.75rem; margin-top: 0.5rem;">
                       {{ updatingComment ? 'Updating...' : 'Update' }}
                     </button>
-                    <button class="btn btn-secondary btn-sm" 
+                    <button class="btn btn-secondary" 
                             (click)="cancelEditComment()"
                             [disabled]="updatingComment"
                             style="margin-top: 0.5rem;">
@@ -234,7 +234,7 @@ import { Post, type Comment } from '../../models/post.interface';
                 </div>
                 
                 <div class="comment-actions" *ngIf="canDeleteComment(comment, post) || canEditComment(comment)">
-                  <button class="edit-btn" 
+                  <button class="btn btn-secondary edit-btn" 
                           (click)="startEditComment(comment)" 
                           title="Edit comment"
                           [disabled]="updatingComment || editingCommentId === comment.id"
@@ -242,7 +242,7 @@ import { Post, type Comment } from '../../models/post.interface';
                     Edit
                   </button>
                   
-                  <button class="delete-btn" 
+                  <button class="btn btn-danger delete-btn" 
                           (click)="deleteComment(comment.id)" 
                           title="Delete comment"
                           [disabled]="deletingComment"
