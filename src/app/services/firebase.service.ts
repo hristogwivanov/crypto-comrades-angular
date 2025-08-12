@@ -120,10 +120,14 @@ export class FirebaseService {
     
     return from(getDocs(q)).pipe(
       map(querySnapshot => 
-        querySnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        } as T))
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const convertedData = this.convertTimestampsToDates(data);
+          return {
+            ...convertedData,
+            id: doc.id
+          } as T;
+        })
       )
     );
   }

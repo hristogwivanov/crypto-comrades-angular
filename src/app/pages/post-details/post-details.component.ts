@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil, switchMap, catchError, take, filter } from 'rxjs/operators';
+import { takeUntil, switchMap, catchError, take, filter, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FirebasePostsService } from '../../services/firebase-posts.service';
 import { AuthService } from '../../services/auth.service';
@@ -207,6 +207,15 @@ import { Post, Comment } from '../../models/post.interface';
                     👎 {{ comment.dislikes }}
                   </span>
                 </div>
+                
+                <div class="comment-actions" *ngIf="canDeleteComment(comment, post)">
+                  <button class="delete-btn" 
+                          (click)="deleteComment(comment.id)" 
+                          title="Delete comment"
+                          [disabled]="deletingComment">
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -243,6 +252,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   submittingComment = false;
   submittingInteraction = false;
   deletingPost = false;
+  deletingComment = false;
   
   hasLiked = false;
   hasDisliked = false;
@@ -398,19 +408,39 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
   }
 
   submitComment(): void {
-    if (!this.newComment.trim()) return;
+    console.log('submitComment called');
+    
+    if (!this.newComment.trim()) {
+      console.log('Empty comment, returning');
+      return;
+    }
 
+    console.log('Comment content:', this.newComment.trim());
     this.submittingComment = true;
     
-    this.firebasePostsService.addComment(this.getCurrentPostId(), {
-      content: this.newComment.trim(),
-      userId: '',
-      postId: this.getCurrentPostId(),
-      author: { username: '', avatar: '' }
-    }).pipe(
+    // Get current user data first
+    this.authService.getCurrentUser().pipe(
+      take(1),
+      tap((user: any) => console.log('Current user from auth service:', user)),
+      filter((user): user is any => user !== null),
+      switchMap(user => {
+        const commentData = {
+          content: this.newComment.trim(),
+          userId: user.id,
+          postId: this.getCurrentPostId(),
+          author: { 
+            username: user.username || user.email?.split('@')[0] || 'Anonymous',
+            avatar: user.avatar || '/default-avatar.svg'
+          }
+        };
+        
+        console.log('Adding comment with data:', commentData);
+        return this.firebasePostsService.addComment(this.getCurrentPostId(), commentData);
+      }),
       takeUntil(this.destroy$)
     ).subscribe({
-      next: () => {
+      next: (commentId) => {
+        console.log('Comment added successfully with ID:', commentId);
         this.newComment = '';
         this.submittingComment = false;
         this.loadPost();
@@ -521,6 +551,43 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
 
   trackByComment(index: number, comment: Comment): string {
     return comment.id;
+  }
+
+  canDeleteComment(comment: Comment, post: Post): boolean {
+    // Get current user synchronously
+    const currentUser = this.authService.getCurrentUser();
+    let user: any = null;
+    
+    // Subscribe briefly to get current user
+    currentUser.pipe(take(1)).subscribe(u => user = u);
+    
+    if (!user) return false;
+    
+    // User can delete their own comments or if they own the post
+    return comment.userId === user.id || post.userId === user.id;
+  }
+
+  deleteComment(commentId: string): void {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    this.deletingComment = true;
+    
+    this.firebasePostsService.deleteComment(this.getCurrentPostId(), commentId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        console.log('Comment deleted successfully');
+        this.deletingComment = false;
+        this.loadPost(); // Reload post to update comments
+      },
+      error: (err: any) => {
+        console.error('Error deleting comment:', err);
+        this.deletingComment = false;
+        alert('Failed to delete comment. Please try again.');
+      }
+    });
   }
 
   private getCurrentPostId(): string {

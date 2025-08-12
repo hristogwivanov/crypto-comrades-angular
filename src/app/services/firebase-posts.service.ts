@@ -92,7 +92,19 @@ export class FirebasePostsService {
    * Get post by ID
    */
   getPostById(postId: string): Observable<Post | null> {
-    return this.firebaseService.get<Post>('posts', postId);
+    return this.firebaseService.get<Post>('posts', postId).pipe(
+      switchMap(post => {
+        if (!post) return of(null);
+        
+        // Fetch comments for this post
+        return this.getPostComments(postId).pipe(
+          map(comments => ({
+            ...post,
+            comments: comments
+          }))
+        );
+      })
+    );
   }
 
   /**
