@@ -267,6 +267,17 @@ export class AuthService {
     return this.auth.currentUser?.uid || null;
   }
 
+  isAdmin(): boolean {
+    const currentUser = this.currentUserSubject.value;
+    return currentUser?.email === 'admin@gmail.com';
+  }
+
+  isAdmin$(): Observable<boolean> {
+    return this.currentUser$.pipe(
+      map(user => user?.email === 'admin@gmail.com' || false)
+    );
+  }
+
   private getUserFromStorage(): User | null {
     const userJson = localStorage.getItem(this.USER_KEY);
     if (userJson) {

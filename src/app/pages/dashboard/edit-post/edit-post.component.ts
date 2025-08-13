@@ -408,7 +408,8 @@ export class EditPostComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       currentUser = user;
     });
-    return currentUser !== null && currentUser.id === post.userId;
+    // Allow admin to edit any post, or post owner to edit their own post
+    return currentUser !== null && (currentUser.id === post.userId || this.authService.isAdmin());
   }
 
   onCryptoMentionsChange(event: any): void {
@@ -488,13 +489,23 @@ export class EditPostComponent implements OnInit, OnDestroy {
     const currentTags = this.parseTags(formValue.tags);
     const currentCryptoMentions = this.parseCryptoMentions(formValue.cryptoMentions);
     
+    const originalTags = this.getPostTags(this.originalPost);
+    const originalCryptoMentions = this.getPostCryptoMentions(this.originalPost);
+    
+    const formTitle = (formValue.title || '').trim();
+    const originalTitle = (this.originalPost.title || '').trim();
+    const formContent = (formValue.content || '').trim();
+    const originalContent = (this.originalPost.content || '').trim();
+    const formImageUrl = (formValue.imageUrl || '').trim();
+    const originalImageUrl = (this.originalPost.imageUrl || '').trim();
+    
     return (
-      formValue.title !== this.originalPost.title ||
-      formValue.content !== this.originalPost.content ||
-      formValue.imageUrl !== (this.originalPost.imageUrl || '') ||
+      formTitle !== originalTitle ||
+      formContent !== originalContent ||
+      formImageUrl !== originalImageUrl ||
       formValue.isPublic !== this.originalPost.isPublic ||
-      JSON.stringify(currentTags) !== JSON.stringify(this.originalPost.tags) ||
-      JSON.stringify(currentCryptoMentions) !== JSON.stringify(this.originalPost.cryptoMentions || [])
+      JSON.stringify(currentTags) !== JSON.stringify(originalTags) ||
+      JSON.stringify(currentCryptoMentions) !== JSON.stringify(originalCryptoMentions)
     );
   }
 

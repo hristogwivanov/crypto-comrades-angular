@@ -234,6 +234,7 @@ export class PostsComponent implements OnInit, OnDestroy {
         this.totalCommentsCount = typeof count === 'number' ? count : 0;
       },
       error: (err) => {
+        console.error('Error loading comment counts:', err);
         this.totalCommentsCount = 0;
       }
     });

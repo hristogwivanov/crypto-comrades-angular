@@ -393,7 +393,8 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
     let user: any = null;
     this.authService.getCurrentUser().pipe(take(1)).subscribe(u => user = u);
     
-    return user && post.userId === user.id;
+    // Allow admin to edit any post, or post owner to edit their own post
+    return user && (post.userId === user.id || this.authService.isAdmin());
   }
 
   getPostParagraphs(content: string): string[] {
@@ -641,7 +642,8 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
     
     if (!user) return false;
     
-    return comment.userId === user.id || post.userId === user.id;
+    // Allow admin to delete any comment, comment author, or post owner to delete comments
+    return comment.userId === user.id || post.userId === user.id || this.authService.isAdmin();
   }
 
   deleteComment(commentId: string): void {
@@ -673,7 +675,8 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
     
     if (!user) return false;
     
-    return comment.userId === user.id;
+    // Allow admin to edit any comment, or comment author to edit their own comment
+    return comment.userId === user.id || this.authService.isAdmin();
   }
 
   startEditComment(comment: Comment): void {
