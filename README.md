@@ -1,11 +1,16 @@
 # 🚀 Crypto Comrades - Angular Single Page Application
 
-[![Angular](https://img.shields.io/badge/Angular-17+-red.svg)](https://angular.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
+[![Angular](https://img.shields.io/badge/Angular-20+-red.svg)](https://angular.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
 [![RxJS](https://img.shields.io/badge/RxJS-7.8+-purple.svg)](https://rxjs.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-Hosted-orange.svg)](https://firebase.google.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A comprehensive cryptocurrency community platform built with Angular 17+. This Single Page Application (SPA) provides users with real-time crypto market data, portfolio management, and a vibrant community for sharing insights and analysis.
+## 🌐 **LIVE APP**: [https://crypto-comrades.web.app](https://crypto-comrades.web.app)
+
+A comprehensive cryptocurrency community platform built with Angular 20+. This Single Page Application (SPA) provides users with real-time crypto market data, portfolio management, and a vibrant community for sharing insights and analysis.
+
+**🔥 Now deployed live on Firebase Hosting with automatic CI/CD deployment!**
 
 ## 🌟 Features
 
@@ -84,8 +89,8 @@ A comprehensive cryptocurrency community platform built with Angular 17+. This S
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- Angular CLI 17+
+- Node.js 20+ and npm
+- Angular CLI 20+
 
 ### Installation
 
@@ -97,7 +102,7 @@ A comprehensive cryptocurrency community platform built with Angular 17+. This S
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 3. **Start development server**
@@ -107,6 +112,32 @@ A comprehensive cryptocurrency community platform built with Angular 17+. This S
 
 4. **Open in browser**
    Navigate to `http://localhost:4200/`
+
+## 🌐 **LIVE DEPLOYMENT**
+
+### 🔗 **Production URL**: [https://crypto-comrades.web.app](https://crypto-comrades.web.app)
+
+The application is deployed on **Firebase Hosting** with automatic CI/CD pipeline via **GitHub Actions**.
+
+### 🔄 **Automatic Deployment**
+- **Every push to `main` branch** triggers automatic deployment
+- **GitHub Actions** handles build and deployment process
+- **Zero-downtime deployments** with Firebase Hosting
+- **Pull Request previews** available for testing changes
+
+### 🛠️ **Deployment Architecture**
+- **Frontend**: Angular 20 SPA hosted on Firebase Hosting
+- **Backend**: Firebase services (Authentication, Firestore, Storage)
+- **CI/CD**: GitHub Actions with Firebase deployment
+- **Build**: Angular production build with optimization
+
+### 📋 **Deployment Process**
+1. Push changes to `main` branch
+2. GitHub Actions automatically triggers
+3. Dependencies installed with `npm ci --legacy-peer-deps`
+4. Angular production build created in `dist/browser/`
+5. Firebase Hosting deployment with SPA routing
+6. Live app updated at [crypto-comrades.web.app](https://crypto-comrades.web.app)
 
 ### Demo Credentials
 For testing purposes, you can use these demo login credentials:
