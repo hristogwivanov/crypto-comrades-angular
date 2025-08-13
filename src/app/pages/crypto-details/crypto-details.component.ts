@@ -143,34 +143,7 @@ import { CryptoCurrency } from '../../models/crypto.interface';
           </div>
         </div>
 
-        <div class="actions-section" *ngIf="isAuthenticated$ | async">
-          <div class="action-card">
-            <h3>Add to Portfolio</h3>
-            <p>Track {{ crypto.name }} in your personal portfolio</p>
-            <a routerLink="/dashboard/portfolio/add-holding" 
-               [queryParams]="{cryptoId: crypto.id, symbol: crypto.symbol, name: crypto.name, currentPrice: crypto.currentPrice}"
-               class="btn btn-primary">Add to Portfolio</a>
-          </div>
 
-          <div class="action-card">
-            <h3>Create Post</h3>
-            <p>Share your thoughts about {{ crypto.name }} with the community</p>
-            <a routerLink="/dashboard/create-post" 
-               [queryParams]="{cryptoMention: crypto.symbol}"
-               class="btn btn-secondary">Write Post</a>
-          </div>
-        </div>
-
-        <div class="guest-actions" *ngIf="!(isAuthenticated$ | async)">
-          <div class="signup-prompt">
-            <h3>Join Crypto Comrades</h3>
-            <p>Sign up to add {{ crypto.name }} to your portfolio and create posts about it</p>
-            <div class="signup-actions">
-              <a routerLink="/auth/register" class="btn btn-primary">Sign Up</a>
-              <a routerLink="/auth/login" class="btn btn-outline">Log In</a>
-            </div>
-          </div>
-        </div>
 
         <div class="last-updated">
           <small>Last updated: {{ crypto.lastUpdated | date:'medium' }}</small>
