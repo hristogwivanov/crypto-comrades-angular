@@ -512,6 +512,24 @@
   font-size: 0.75rem;
 }
 
+/* Author link styling */
+.author-link {
+  color: #000000 !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  transition: opacity 0.2s ease;
+}
+
+.author-link:hover {
+  opacity: 0.7;
+}
+
+.author-link:visited {
+  color: #000000 !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+}
+
 .comment-body p {
   color: #374151;
   line-height: 1.6;

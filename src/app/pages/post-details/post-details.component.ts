@@ -37,7 +37,9 @@ import { Post, type Comment } from '../../models/post.interface';
               <img [src]="post.author.avatar || '/default-avatar.svg'" 
                    [alt]="post.author.username" class="author-avatar">
               <div class="author-details">
-                <h4 class="author-name">{{ post.author.username }}</h4>
+                <h4 class="author-name">
+                  <a [routerLink]="['/user', post.author.username]" class="author-link">{{ post.author.username }}</a>
+                </h4>
                 <time class="post-date">{{ post.createdAt | date:'MMM d, yyyy, hh:mm a' }}</time>
                 <span class="last-updated" *ngIf="post.updatedAt !== post.createdAt">
                   Updated: {{ post.updatedAt | date:'MMM d, yyyy, hh:mm a' }}
@@ -151,7 +153,9 @@ import { Post, type Comment } from '../../models/post.interface';
                 <img [src]="comment.author.avatar || '/default-avatar.svg'" 
                      [alt]="comment.author.username" class="comment-avatar">
                 <div class="comment-meta">
-                  <span class="comment-author">{{ comment.author.username }}</span>
+                  <span class="comment-author">
+                    <a [routerLink]="['/user', comment.author.username]" class="author-link">{{ comment.author.username }}</a>
+                  </span>
                   <time class="comment-date">{{ comment.createdAt | date:'MMM d, yyyy, hh:mm a' }}</time>
                 </div>
               </div>
