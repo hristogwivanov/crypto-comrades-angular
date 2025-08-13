@@ -89,7 +89,20 @@ import { AuthService } from '../../../services/auth.service';
 
 
 
-          <div class="form-error" *ngIf="registerError">
+          <!-- Custom UI for existing user error -->
+          <div class="existing-user-error" *ngIf="isExistingUserError">
+            <div class="error-icon">⚠️</div>
+            <div class="error-content">
+              <h4>Account Already Exists</h4>
+              <p>{{ registerError }}</p>
+              <div class="error-actions">
+                <a routerLink="/auth/login" class="btn btn-secondary btn-small">Sign In Instead</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- General error message -->
+          <div class="form-error" *ngIf="registerError && !isExistingUserError">
             <small>{{ registerError }}</small>
           </div>
 
@@ -152,6 +165,7 @@ export class RegisterComponent implements OnDestroy {
   registerForm: FormGroup;
   isSubmitting = false;
   registerError: string | null = null;
+  isExistingUserError = false;
   passwordRequirements = {
     length: false,
     uppercase: false,
@@ -199,6 +213,7 @@ export class RegisterComponent implements OnDestroy {
 
     this.isSubmitting = true;
     this.registerError = null;
+    this.isExistingUserError = false;
 
     const formData = this.registerForm.value;
     const registerRequest = {
@@ -220,12 +235,22 @@ export class RegisterComponent implements OnDestroy {
         this.isSubmitting = false;
         console.error('Registration error:', error);
         
-        if (error.status === 409) {
-          this.registerError = 'Email or username already exists. Please choose different credentials.';
-        } else if (error.status === 400) {
-          this.registerError = 'Invalid registration data. Please check your information and try again.';
-        } else {
-          this.registerError = 'Registration failed. Please check your internet connection and try again.';
+        // Check for Firebase existing email error
+        if (error.message && error.message.includes('Email already exists')) {
+          this.isExistingUserError = true;
+          this.registerError = 'It looks like this email or username is already taken. Please try with different credentials or sign in if you already have an account.';
+        }
+        // Check for weak password error
+        else if (error.message && error.message.includes('Password is too weak')) {
+          this.registerError = 'Password is too weak. Please choose a stronger password with uppercase, lowercase, numbers, and special characters.';
+        }
+        // Check for invalid email error
+        else if (error.message && error.message.includes('valid email address')) {
+          this.registerError = 'Please enter a valid email address.';
+        }
+        // Generic error for other cases
+        else {
+          this.registerError = error.message || 'Registration failed. Please check your internet connection and try again.';
         }
       }
     });
