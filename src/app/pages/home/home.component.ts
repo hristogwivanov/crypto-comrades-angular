@@ -45,11 +45,7 @@ import { Post } from '../../models/post.interface';
               <p>Share insights and discuss crypto trends with the community</p>
               <a routerLink="/posts" class="feature-link">Read Posts</a>
             </div>
-            <div class="feature-card" *ngIf="!(isAuthenticated$ | async)">
-              <h3>👥 Join Community</h3>
-              <p>Sign up to create posts, manage portfolios, and interact with others</p>
-              <a routerLink="/auth/register" class="feature-link">Get Started</a>
-            </div>
+
           </div>
         </div>
       </section>
@@ -69,6 +65,7 @@ import { Post } from '../../models/post.interface';
                    [class.negative]="crypto.priceChangePercentage24h < 0">
                   {{ crypto.priceChangePercentage24h | number:'1.2-2' }}%
                 </p>
+                <p class="crypto-volume">Vol: {{ formatVolumeInBillions(crypto.totalVolume) }}</p>
               </div>
             </div>
           </div>
@@ -120,7 +117,7 @@ export class HomeComponent implements OnInit {
     
     // Add error handling for API calls
     this.topCryptos$ = this.cryptoService.getTopCryptos().pipe(
-      map(cryptos => cryptos.slice(0, 6)),
+      map(cryptos => cryptos.slice(0, 5)),
       catchError((error: any) => {
         console.warn('Failed to load crypto data:', error);
         return of([]); // Return empty array on error
@@ -133,5 +130,10 @@ export class HomeComponent implements OnInit {
         return of([]); // Return empty array on error
       })
     );
+  }
+
+  formatVolumeInBillions(volume: number): string {
+    const billions = volume / 1000000000;
+    return `$${billions.toFixed(2)}B`;
   }
 }
