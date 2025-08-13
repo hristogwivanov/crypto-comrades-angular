@@ -51,7 +51,15 @@ import { AuthService } from '../../../services/auth.service';
 
 
 
-          <div class="form-error" *ngIf="loginError">
+          <div class="invalid-credentials-error" *ngIf="isInvalidCredentialsError">
+            <div class="error-icon">⚠️</div>
+            <div class="error-content">
+              <h4>Invalid Credentials</h4>
+              <p>{{ loginError }}</p>
+            </div>
+          </div>
+
+          <div class="form-error" *ngIf="loginError && !isInvalidCredentialsError">
             <small>{{ loginError }}</small>
           </div>
 
@@ -94,6 +102,7 @@ export class LoginComponent implements OnDestroy {
   loginForm: FormGroup;
   isSubmitting = false;
   loginError: string | null = null;
+  isInvalidCredentialsError = false;
 
 
   private destroy$ = new Subject<void>();
@@ -130,6 +139,7 @@ export class LoginComponent implements OnDestroy {
 
     this.isSubmitting = true;
     this.loginError = null;
+    this.isInvalidCredentialsError = false;
 
     const { email, password } = this.loginForm.value;
 
@@ -147,12 +157,18 @@ export class LoginComponent implements OnDestroy {
         this.isSubmitting = false;
         console.error('Login error:', error);
         
-        if (error.status === 401) {
-          this.loginError = 'Invalid email or password. Please try again.';
-        } else if (error.status === 429) {
+        if (error.message && error.message.includes('auth/invalid-credential')) {
+          this.isInvalidCredentialsError = true;
+          this.loginError = 'Invalid email or password. Please check your credentials or create a new account if you don\'t have one.';
+        }
+        else if (error.message && error.message.includes('too many')) {
           this.loginError = 'Too many login attempts. Please try again later.';
-        } else {
-          this.loginError = 'Login failed. Please check your internet connection and try again.';
+        }
+        else if (error.message && error.message.includes('auth/invalid-email')) {
+          this.loginError = 'Please enter a valid email address.';
+        }
+        else {
+          this.loginError = error.message || 'Login failed. Please check your internet connection and try again.';
         }
       }
     });

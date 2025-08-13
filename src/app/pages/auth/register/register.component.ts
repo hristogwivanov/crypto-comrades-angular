@@ -89,7 +89,6 @@ import { AuthService } from '../../../services/auth.service';
 
 
 
-          <!-- Custom UI for existing user error -->
           <div class="existing-user-error" *ngIf="isExistingUserError">
             <div class="error-icon">⚠️</div>
             <div class="error-content">
@@ -101,7 +100,6 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </div>
 
-          <!-- General error message -->
           <div class="form-error" *ngIf="registerError && !isExistingUserError">
             <small>{{ registerError }}</small>
           </div>
@@ -235,20 +233,16 @@ export class RegisterComponent implements OnDestroy {
         this.isSubmitting = false;
         console.error('Registration error:', error);
         
-        // Check for Firebase existing email error
         if (error.message && error.message.includes('Email already exists')) {
           this.isExistingUserError = true;
           this.registerError = 'It looks like this email or username is already taken. Please try with different credentials or sign in if you already have an account.';
         }
-        // Check for weak password error
         else if (error.message && error.message.includes('Password is too weak')) {
           this.registerError = 'Password is too weak. Please choose a stronger password with uppercase, lowercase, numbers, and special characters.';
         }
-        // Check for invalid email error
         else if (error.message && error.message.includes('valid email address')) {
           this.registerError = 'Please enter a valid email address.';
         }
-        // Generic error for other cases
         else {
           this.registerError = error.message || 'Registration failed. Please check your internet connection and try again.';
         }
