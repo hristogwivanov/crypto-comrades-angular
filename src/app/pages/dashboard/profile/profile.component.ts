@@ -190,10 +190,11 @@ export class ProfileComponent implements OnInit {
       const profileData = this.profileForm.value;
       
       this.userService.updateUserProfile(this.currentUserId, profileData).subscribe({
-        next: () => {
+        next: async () => {
           this.updateMessage = 'Profile updated successfully!';
           this.isUpdating = false;
           this.loadUserProfile(this.currentUserId!);
+          await this.authService.refreshCurrentUser();
         },
         error: (error) => {
           console.error('Error updating profile:', error);
@@ -302,6 +303,9 @@ export class ProfileComponent implements OnInit {
       // Update form with the new avatar URL only, preserving other fields
       this.profileForm.patchValue({ avatar: downloadURL });
       this.updateMessage = 'Avatar uploaded successfully!';
+      
+      // Refresh header to show new avatar immediately
+      await this.authService.refreshCurrentUser();
       
       // Clear selected file and preview
       this.selectedFile = null;

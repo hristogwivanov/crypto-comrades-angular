@@ -164,6 +164,15 @@ export class AuthService {
     return this.currentUser$;
   }
 
+  async refreshCurrentUser(): Promise<void> {
+    const firebaseUser = this.auth.currentUser;
+    if (firebaseUser) {
+      const user = await this.createUserFromFirebaseUser(firebaseUser);
+      this.setUserInStorage(user);
+      this.currentUserSubject.next(user);
+    }
+  }
+
   private async createUserFromFirebaseUser(firebaseUser: FirebaseUser): Promise<User> {
     const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
     
@@ -186,6 +195,7 @@ export class AuthService {
           username: firestoreProfile.username || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
           firstName: firestoreProfile.firstName || baseUser.firstName,
           lastName: firestoreProfile.lastName || baseUser.lastName,
+          avatar: firestoreProfile.avatar || baseUser.avatar,
           isEmailVerified: firestoreProfile.isEmailVerified ?? baseUser.isEmailVerified
         };
       }
