@@ -175,7 +175,7 @@ ng e2e
 
 ## 📋 Assignment Requirements Compliance
 
-✅ **Single Page Application**: Built with Angular 17+  
+✅ **Single Page Application**: Built with Angular 20+  
 ✅ **Public & Private Areas**: Clear separation with route guards  
 ✅ **3+ Dynamic Pages**: Market, Posts, Crypto Details, Dashboard, etc.  
 ✅ **Catalog & Details Views**: Market↔Crypto Details, Posts↔Post Details  
