@@ -60,6 +60,7 @@ A comprehensive cryptocurrency community platform built with Angular 20+. This S
 - `/market/:id` → Individual crypto details
 - `/posts` → Community posts catalog
 - `/posts/:id` → Individual post details
+- `/user/:username` → Public user profile pages
 - `/auth/login` → User login
 - `/auth/register` → User registration
 
