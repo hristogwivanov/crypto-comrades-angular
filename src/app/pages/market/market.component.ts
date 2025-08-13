@@ -31,7 +31,6 @@ import { CryptoCurrency } from '../../models/crypto.interface';
         <div class="filter-container">
           <select [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select">
             <option value="market_cap">Market Cap</option>
-            <option value="market_cap_rank">Market Cap Rank</option>
             <option value="current_price">Price</option>
             <option value="price_change_percentage_24h">24h Change</option>
             <option value="total_volume">Volume</option>
@@ -229,15 +228,6 @@ export class MarketComponent implements OnInit, OnDestroy {
           let bValue: any;
 
           switch (this.sortBy) {
-            case 'market_cap_rank':
-              aValue = a.marketCapRank;
-              bValue = b.marketCapRank;
-              
-              // Handle unranked coins (null/undefined rank) - put them at the bottom
-              if (aValue == null && bValue == null) return 0;
-              if (aValue == null) return this.sortDirection === 'asc' ? 1 : -1;
-              if (bValue == null) return this.sortDirection === 'asc' ? -1 : 1;
-              break;
             case 'current_price':
               aValue = a.currentPrice;
               bValue = b.currentPrice;
@@ -255,13 +245,8 @@ export class MarketComponent implements OnInit, OnDestroy {
               bValue = b.totalVolume;
               break;
             default:
-              aValue = a.marketCapRank;
-              bValue = b.marketCapRank;
-              
-              // Handle unranked coins for default case as well
-              if (aValue == null && bValue == null) return 0;
-              if (aValue == null) return this.sortDirection === 'asc' ? 1 : -1;
-              if (bValue == null) return this.sortDirection === 'asc' ? -1 : 1;
+              aValue = a.marketCap;
+              bValue = b.marketCap;
           }
 
           // Handle null/undefined values for other sort criteria
