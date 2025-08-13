@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/crypto-comrades-angular",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
