@@ -33,13 +33,6 @@ import { Post } from '../../models/post.interface';
         </div>
         
         <div class="filter-container">
-          <select [(ngModel)]="filterBy" (change)="onFilterChange()" class="filter-select">
-            <option value="all">All Posts</option>
-            <option value="public">Public Posts</option>
-            <option value="recent">Recent Posts</option>
-            <option value="popular">Popular Posts</option>
-          </select>
-          
           <select [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select">
             <option value="createdAt">Latest First</option>
             <option value="likes">Most Liked</option>
@@ -181,8 +174,7 @@ export class PostsComponent implements OnInit, OnDestroy {
   isAuthenticated$!: Observable<boolean>;
   
   searchTerm: string = '';
-  filterBy: string = 'all';
-  sortBy: 'newest' | 'oldest' | 'most-liked' = 'newest';
+  sortBy: 'createdAt' | 'likes' | 'comments' | 'title' = 'createdAt';
   loading = false;
   error: string | null = null;
   selectedTag = '';
@@ -194,8 +186,7 @@ export class PostsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private searchSubject = new BehaviorSubject<string>('');
-  private filterSubject = new BehaviorSubject<string>('all');
-  private sortSubject = new BehaviorSubject<string>('newest');
+  private sortSubject = new BehaviorSubject<string>('createdAt');
 
   constructor(
     private firebasePostsService: FirebasePostsService,
@@ -252,39 +243,22 @@ export class PostsComponent implements OnInit, OnDestroy {
   setupFilters(): void {
     this.filteredPosts$ = combineLatest([
       this.posts$,
-      this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()),
-      this.filterSubject,
+      this.searchSubject.pipe(startWith(''), debounceTime(300), distinctUntilChanged()),
       this.sortSubject
     ]).pipe(
-      map(([posts, search, filter, sort]) => {
+      map(([posts, search, sort]) => {
         let filtered = posts;
 
-        // Apply search filter
         if (search.trim()) {
           const searchLower = search.toLowerCase();
           filtered = filtered.filter((post: Post) => 
             post.title.toLowerCase().includes(searchLower) ||
             post.content.toLowerCase().includes(searchLower) ||
             post.author.username.toLowerCase().includes(searchLower) ||
-            post.tags.some((tag: string) => tag.toLowerCase().includes(searchLower)) ||
-            (post.cryptoMentions && post.cryptoMentions.some((mention: string) => 
+            (post.tags && Array.isArray(post.tags) && post.tags.some((tag: string) => tag.toLowerCase().includes(searchLower))) ||
+            (post.cryptoMentions && Array.isArray(post.cryptoMentions) && post.cryptoMentions.some((mention: string) => 
               mention.toLowerCase().includes(searchLower)))
           );
-        }
-
-        // Apply category filter
-        switch (filter) {
-          case 'public':
-            filtered = filtered.filter((post: Post) => post.isPublic);
-            break;
-          case 'recent':
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            filtered = filtered.filter((post: Post) => new Date(post.createdAt) >= weekAgo);
-            break;
-          case 'popular':
-            filtered = filtered.filter((post: Post) => post.likes >= 5 || post.comments.length >= 3);
-            break;
         }
 
         // Apply sorting
@@ -312,10 +286,6 @@ export class PostsComponent implements OnInit, OnDestroy {
     const value = event.target.value;
     this.searchTerm = value;
     this.searchSubject.next(value);
-  }
-
-  onFilterChange(): void {
-    this.filterSubject.next(this.filterBy);
   }
 
   onSortChange(): void {
