@@ -79,7 +79,8 @@ import { Post } from '../../models/post.interface';
       </div>
 
       <div class="posts-grid" *ngIf="filteredPosts$ | async as posts">
-        <div class="post-card" *ngFor="let post of posts; trackBy: trackByPost" [routerLink]="['/posts', post.id]">
+        <div class="post-card" *ngFor="let post of posts; trackBy: trackByPost" [routerLink]="['/posts', post.id]" 
+             style="display: flex !important; flex-direction: column !important; min-height: 400px !important;">
           <div class="post-header">
             <div class="author-info">
               <img [src]="post.author.avatar || '/default-avatar.svg'" 
@@ -96,7 +97,7 @@ import { Post } from '../../models/post.interface';
             </div>
           </div>
 
-          <div class="post-content">
+          <div class="post-content" style="flex-grow: 1 !important;">
             <h3 class="post-title">{{ post.title }}</h3>
             <p class="post-excerpt">{{ post.content | slice:0:200 }}...</p>
             
@@ -120,7 +121,7 @@ import { Post } from '../../models/post.interface';
             <img [src]="post.imageUrl" [alt]="post.title" class="post-img">
           </div>
 
-          <div class="post-footer">
+          <div class="post-footer" style="margin-top: auto !important; flex-shrink: 0 !important;">
             <div class="post-stats">
               <div class="stat-item">
                 <span class="stat-icon">👍</span>
