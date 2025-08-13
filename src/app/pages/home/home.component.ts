@@ -50,11 +50,6 @@ import { Post } from '../../models/post.interface';
               <p>Sign up to create posts, manage portfolios, and interact with others</p>
               <a routerLink="/auth/register" class="feature-link">Get Started</a>
             </div>
-            <div class="feature-card" *ngIf="isAuthenticated$ | async">
-              <h3>📊 Your Dashboard</h3>
-              <p>Access your personal dashboard and manage your account</p>
-              <a routerLink="/dashboard" class="feature-link">Go to Dashboard</a>
-            </div>
           </div>
         </div>
       </section>
