@@ -33,7 +33,7 @@ A comprehensive cryptocurrency community platform built with Angular 20+. This S
 ## 🛠️ Technical Stack
 
 ### Frontend Technologies
-- **Angular 17+**: Latest version with standalone components
+- **Angular 20+**: Latest version with standalone components
 - **TypeScript 5.2+**: Strong typing and modern JavaScript features
 - **RxJS 7.8+**: Reactive programming with Observables
 - **Angular Reactive Forms**: Form validation and management
@@ -168,9 +168,6 @@ ng build --prod
 ```bash
 # Run unit tests
 ng test
-
-# Run end-to-end tests
-ng e2e
 ```
 
 ## 📋 Assignment Requirements Compliance
@@ -218,7 +215,7 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built using Angular 17+ and TypeScript**
+**Built using Angular 20+ and TypeScript**
 
 To build the project run:
 
