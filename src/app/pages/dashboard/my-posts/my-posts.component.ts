@@ -179,35 +179,6 @@ import { User } from '../../../models/user.interface';
           </div>
         </div>
       </div>
-
-      <div class="quick-actions">
-        <div class="quick-actions-header">
-          <h3>Quick Actions</h3>
-        </div>
-        <div class="actions-list">
-          <a routerLink="/dashboard/create-post" class="quick-action">
-            <span class="action-icon">✍️</span>
-            <div class="action-content">
-              <h4>Write New Post</h4>
-              <p>Share your latest crypto insights</p>
-            </div>
-          </a>
-          <a routerLink="/posts" class="quick-action">
-            <span class="action-icon">🌐</span>
-            <div class="action-content">
-              <h4>Browse Community</h4>
-              <p>See what others are discussing</p>
-            </div>
-          </a>
-          <a routerLink="/market" class="quick-action">
-            <span class="action-icon">📈</span>
-            <div class="action-content">
-              <h4>Check Market</h4>
-              <p>Get latest crypto prices</p>
-            </div>
-          </a>
-        </div>
-      </div>
     </div>
   `,
   styleUrls: ['./my-posts.component.css']
