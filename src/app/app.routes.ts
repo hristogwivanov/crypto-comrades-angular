@@ -29,6 +29,15 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/post-details/post-details.component').then(m => m.PostDetailsComponent)
   },
   {
+    path: 'profile',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
+    path: 'user/:username',
+    loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
     path: 'portfolios',
     loadComponent: () => import('./pages/public-portfolios/public-portfolios.component').then(m => m.PublicPortfoliosComponent)
   },

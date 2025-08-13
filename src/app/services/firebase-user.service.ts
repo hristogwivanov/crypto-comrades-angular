@@ -169,6 +169,38 @@ export class FirebaseUserService {
   }
 
   /**
+   * Get user profile by exact username
+   */
+  getUserByUsername(username: string): Observable<UserProfile | null> {
+    const usersRef = collection(this.firestore, 'users');
+    const q = query(
+      usersRef,
+      where('username', '==', username)
+    );
+
+    return from(getDocs(q)).pipe(
+      map(querySnapshot => {
+        if (querySnapshot.empty) return null;
+        
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data['createdAt']?.toDate() || new Date(),
+          updatedAt: data['updatedAt']?.toDate() || new Date(),
+          lastActiveAt: data['lastActiveAt']?.toDate() || new Date(),
+          joinedDate: data['joinedDate']?.toDate() || data['createdAt']?.toDate() || new Date()
+        } as UserProfile;
+      }),
+      catchError(error => {
+        console.error('Error getting user by username:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
    * Search users by username
    */
   searchUsersByUsername(username: string): Observable<UserProfile[]> {

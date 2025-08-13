@@ -24,7 +24,7 @@ import { User } from '../../models/user.interface';
             <a routerLink="/home" routerLinkActive="active" class="nav-link">Home</a>
             <a routerLink="/market" routerLinkActive="active" class="nav-link">Market</a>
             <a routerLink="/posts" routerLinkActive="active" class="nav-link">Community</a>
-            <a routerLink="/portfolios" routerLinkActive="active" class="nav-link">Portfolios</a>
+            <a routerLink="/profile" routerLinkActive="active" class="nav-link" *ngIf="isAuthenticated">Profile</a>
           </div>
 
           <div class="nav-actions">
