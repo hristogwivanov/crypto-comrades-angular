@@ -64,8 +64,8 @@ export class AuthService {
     return from(createUserWithEmailAndPassword(this.auth, credentials.email, credentials.password))
       .pipe(
         switchMap(userCredential => {
-          // Update the user's display name
-          const displayName = `${credentials.firstName} ${credentials.lastName}`;
+          // Update the user's display name to username
+          const displayName = credentials.username;
           return from(updateProfile(userCredential.user, { displayName }))
             .pipe(
               map(() => userCredential)
@@ -73,8 +73,8 @@ export class AuthService {
         }),
         map(userCredential => {
           const user = this.mapFirebaseUserToUser(userCredential.user);
-          user.firstName = credentials.firstName;
-          user.lastName = credentials.lastName;
+          user.firstName = '';
+          user.lastName = '';
           user.username = credentials.username;
           
           return {

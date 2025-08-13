@@ -19,37 +19,7 @@ import { AuthService } from '../../../services/auth.service';
         </div>
 
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="firstName" class="form-label">First Name</label>
-              <input 
-                type="text" 
-                id="firstName"
-                formControlName="firstName"
-                class="form-input"
-                [class.error]="firstNameControl.invalid && firstNameControl.touched"
-                placeholder="Enter your first name">
-              <div class="form-error" *ngIf="firstNameControl.invalid && firstNameControl.touched">
-                <small *ngIf="firstNameControl.errors?.['required']">First name is required</small>
-                <small *ngIf="firstNameControl.errors?.['minlength']">First name must be at least 2 characters</small>
-              </div>
-            </div>
 
-            <div class="form-group">
-              <label for="lastName" class="form-label">Last Name</label>
-              <input 
-                type="text" 
-                id="lastName"
-                formControlName="lastName"
-                class="form-input"
-                [class.error]="lastNameControl.invalid && lastNameControl.touched"
-                placeholder="Enter your last name">
-              <div class="form-error" *ngIf="lastNameControl.invalid && lastNameControl.touched">
-                <small *ngIf="lastNameControl.errors?.['required']">Last name is required</small>
-                <small *ngIf="lastNameControl.errors?.['minlength']">Last name must be at least 2 characters</small>
-              </div>
-            </div>
-          </div>
 
           <div class="form-group">
             <label for="username" class="form-label">Username</label>
@@ -156,21 +126,21 @@ import { AuthService } from '../../../services/auth.service';
               <h4>Real-time Market Data</h4>
               <p>Access live cryptocurrency prices and market information</p>
             </div>
-            <div class="benefit">
+            <!-- <div class="benefit">
               <span class="benefit-icon">💼</span>
               <h4>Portfolio Tracking</h4>
               <p>Monitor your crypto holdings and track performance over time</p>
-            </div>
+            </div> -->
             <div class="benefit">
               <span class="benefit-icon">💬</span>
               <h4>Community Engagement</h4>
               <p>Share insights, discuss trends, and learn from other traders</p>
             </div>
-            <div class="benefit">
+            <!-- <div class="benefit">
               <span class="benefit-icon">📈</span>
               <h4>Advanced Analytics</h4>
               <p>Get detailed charts and analysis tools for better decisions</p>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -198,8 +168,6 @@ export class RegisterComponent implements OnDestroy {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
       username: ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8), this.strongPasswordValidator]],
@@ -217,8 +185,6 @@ export class RegisterComponent implements OnDestroy {
     this.destroy$.complete();
   }
 
-  get firstNameControl() { return this.registerForm.get('firstName')!; }
-  get lastNameControl() { return this.registerForm.get('lastName')!; }
   get usernameControl() { return this.registerForm.get('username')!; }
   get emailControl() { return this.registerForm.get('email')!; }
   get passwordControl() { return this.registerForm.get('password')!; }
@@ -236,8 +202,6 @@ export class RegisterComponent implements OnDestroy {
 
     const formData = this.registerForm.value;
     const registerRequest = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
       username: formData.username,
       email: formData.email,
       password: formData.password,

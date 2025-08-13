@@ -65,8 +65,8 @@ export class FirebaseAuthService {
         const userData: Omit<UserProfile, 'id'> = {
           email: firebaseUser.email!,
           username: credentials.username,
-          firstName: credentials.firstName || '',
-          lastName: credentials.lastName || '',
+          firstName: '',
+          lastName: '',
           avatar: firebaseUser.photoURL || undefined,
           createdAt: new Date(),
           isEmailVerified: false,
@@ -92,7 +92,7 @@ export class FirebaseAuthService {
     return from(
       signInWithEmailAndPassword(this.auth, credentials.email, credentials.password)
     ).pipe(
-      map(userCredential => this.createUserFromFirebaseUser(userCredential.user))
+      switchMap(userCredential => from(this.createUserFromFirebaseUser(userCredential.user)))
     );
   }
 
@@ -152,6 +152,17 @@ export class FirebaseAuthService {
   }
 
   /**
+   * Refresh current user data by re-fetching from Firestore
+   */
+  async refreshCurrentUser(): Promise<void> {
+    const firebaseUser = this.getCurrentFirebaseUser();
+    if (firebaseUser) {
+      const refreshedUser = await this.createUserFromFirebaseUser(firebaseUser);
+      this.currentUserSubject.next(refreshedUser);
+    }
+  }
+
+  /**
    * Update email verification status
    */
   updateEmailVerificationStatus(userId: string, isVerified: boolean): Observable<void> {
@@ -166,11 +177,13 @@ export class FirebaseAuthService {
   }
 
   /**
-   * Convert Firebase user to app User interface
+   * Convert Firebase user to app User interface, merging with Firestore profile data
    */
-  private createUserFromFirebaseUser(firebaseUser: FirebaseUser): User {
+  private async createUserFromFirebaseUser(firebaseUser: FirebaseUser): Promise<User> {
     const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
-    return {
+    
+    // Create base user from Firebase Auth
+    const baseUser: User = {
       id: firebaseUser.uid,
       email: firebaseUser.email!,
       username: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -180,6 +193,27 @@ export class FirebaseAuthService {
       createdAt: new Date(firebaseUser.metadata.creationTime!),
       isEmailVerified: firebaseUser.emailVerified
     };
+
+    try {
+      // Fetch Firestore profile to get updated data (especially avatar)
+      const firestoreProfile = await this.firebaseService.get<UserProfile>('users', firebaseUser.uid).toPromise();
+      
+      if (firestoreProfile) {
+        // Merge Firestore data with Firebase Auth data, prioritizing Firestore values
+        return {
+          ...baseUser,
+          username: firestoreProfile.username || baseUser.username,
+          firstName: firestoreProfile.firstName || baseUser.firstName,
+          lastName: firestoreProfile.lastName || baseUser.lastName,
+          avatar: firestoreProfile.avatar || baseUser.avatar, // Use Firestore avatar if available
+          isEmailVerified: firestoreProfile.isEmailVerified ?? baseUser.isEmailVerified
+        };
+      }
+    } catch (error) {
+      console.warn('Could not fetch Firestore profile for user:', firebaseUser.uid, error);
+    }
+
+    return baseUser;
   }
 
   resendEmailVerification(): Observable<void> {

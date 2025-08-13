@@ -287,6 +287,9 @@ export class ProfileComponent implements OnInit {
       // Update user profile with new avatar URL
       await this.userService.updateUserProfile(this.currentUserId, { avatar: downloadURL }).toPromise();
       
+      // Refresh current user in auth service to update header
+      await this.authService.refreshCurrentUser();
+      
       // Update form and preview
       this.profileForm.patchValue({ avatar: downloadURL });
       this.updateMessage = 'Avatar uploaded successfully!';
@@ -322,7 +325,10 @@ export class ProfileComponent implements OnInit {
       this.updateError = '';
       
       this.userService.updateUserProfile(this.currentUserId, { avatar: '' }).subscribe({
-        next: () => {
+        next: async () => {
+          // Refresh current user in auth service to update header
+          await this.authService.refreshCurrentUser();
+          
           this.profileForm.patchValue({ avatar: '' });
           this.updateMessage = 'Avatar removed successfully!';
           this.isUpdating = false;
