@@ -149,9 +149,7 @@ export class LoginComponent implements OnDestroy {
       next: (response) => {
         this.isSubmitting = false;
         
-
-        const returnUrl = this.getReturnUrl();
-        this.router.navigate([returnUrl]);
+        this.router.navigate(['/posts']);
       },
       error: (error) => {
         this.isSubmitting = false;
