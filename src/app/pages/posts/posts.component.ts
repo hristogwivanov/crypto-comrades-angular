@@ -103,7 +103,7 @@ import { Post } from '../../models/post.interface';
 
           <div class="post-content" style="flex-grow: 1 !important;">
             <h3 class="post-title">{{ post.title }}</h3>
-            <p class="post-excerpt">{{ post.content | slice:0:200 }}...</p>
+            <p class="post-excerpt">{{ getPostExcerpt(post.content) }}</p>
             
             <div class="post-tags" *ngIf="post.tags && Array.isArray(post.tags) && post.tags.length > 0">
               <span class="tag" *ngFor="let tag of post.tags.slice(0, 3)">{{ tag }}</span>
@@ -343,5 +343,13 @@ export class PostsComponent implements OnInit, OnDestroy {
   getUniqueAuthors(posts: Post[]): number {
     const uniqueAuthors = new Set(posts.map(post => post.author.username));
     return uniqueAuthors.size;
+  }
+
+  getPostExcerpt(content: string): string {
+    const maxLength = 200;
+    if (content.length <= maxLength) {
+      return content;
+    }
+    return content.slice(0, maxLength) + '...';
   }
 }
