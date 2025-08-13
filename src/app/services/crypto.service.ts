@@ -33,7 +33,7 @@ export class CryptoService {
   private fetchMarketData(): Observable<CryptoCurrency[]> {
     const params = new HttpParams()
       .set('vs_currency', 'usd')
-      .set('order', 'volume_desc')
+      .set('order', 'market_cap_desc')
       .set('per_page', '100')
       .set('page', '1')
       .set('sparkline', 'false')
