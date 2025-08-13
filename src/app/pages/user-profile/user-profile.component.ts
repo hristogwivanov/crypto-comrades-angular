@@ -78,6 +78,7 @@ import { Post } from '../../models/post.interface';
             <div class="post-meta">
               <div class="post-engagement">
                 <span class="likes">👍 {{ post.likes }}</span>
+                <span class="dislikes">👎 {{ post.dislikes }}</span>
                 <span class="comments">💬 {{ post.comments.length || 0 }}</span>
               </div>
             </div>

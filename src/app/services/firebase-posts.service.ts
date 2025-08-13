@@ -46,18 +46,48 @@ export class FirebasePostsService {
    * Get all posts (public posts or user's own posts)
    */
   getAllPosts(limitCount?: number): Observable<Post[]> {
+    let postsObservable: Observable<Post[]>;
+    
     if (limitCount) {
-      return this.firebaseService.getAll<Post>('posts',
+      postsObservable = this.firebaseService.getAll<Post>('posts',
         this.firebaseService.where('isPublic', '==', true),
         this.firebaseService.orderBy('createdAt', 'desc'),
         this.firebaseService.limit(limitCount)
       );
     } else {
-      return this.firebaseService.getAll<Post>('posts',
+      postsObservable = this.firebaseService.getAll<Post>('posts',
         this.firebaseService.where('isPublic', '==', true),
         this.firebaseService.orderBy('createdAt', 'desc')
       );
     }
+
+    // Fetch comments for each post
+    return postsObservable.pipe(
+      switchMap(posts => {
+        if (!posts || posts.length === 0) {
+          return of([]);
+        }
+
+        // For each post, fetch its comments and combine them
+        const postsWithComments = posts.map(post => 
+          this.getPostComments(post.id).pipe(
+            map(comments => ({
+              ...post,
+              comments: comments
+            })),
+            catchError(err => {
+              console.error(`Error fetching comments for post ${post.id}:`, err);
+              return of({
+                ...post,
+                comments: [] // Return empty comments array on error
+              });
+            })
+          )
+        );
+
+        return combineLatest(postsWithComments);
+      })
+    );
   }
 
   /**

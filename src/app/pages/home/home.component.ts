@@ -88,6 +88,7 @@ import { Post } from '../../models/post.interface';
               <p class="post-excerpt">{{ post.content | slice:0:150 }}...</p>
               <div class="post-stats">
                 <span class="likes">👍 {{ post.likes }}</span>
+                <span class="dislikes">👎 {{ post.dislikes }}</span>
                 <span class="comments">💬 {{ post.comments.length }}</span>
               </div>
             </div>

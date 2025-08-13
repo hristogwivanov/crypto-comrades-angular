@@ -59,6 +59,10 @@ import { Post } from '../../models/post.interface';
           <span class="stat-label">Total Likes</span>
         </div>
         <div class="stat-item">
+          <span class="stat-number">{{ getTotalDislikes(posts) }}</span>
+          <span class="stat-label">Total Dislikes</span>
+        </div>
+        <div class="stat-item">
           <span class="stat-number">{{ getTotalComments(posts) }}</span>
           <span class="stat-label">Total Comments</span>
         </div>
@@ -324,6 +328,10 @@ export class PostsComponent implements OnInit, OnDestroy {
 
   getTotalLikes(posts: Post[]): number {
     return posts.reduce((total, post) => total + post.likes, 0);
+  }
+
+  getTotalDislikes(posts: Post[]): number {
+    return posts.reduce((total, post) => total + post.dislikes, 0);
   }
 
   getTotalComments(posts: Post[]): number {
