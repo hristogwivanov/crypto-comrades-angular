@@ -40,10 +40,8 @@ import { User } from '../../models/user.interface';
               </div>
               
               <div class="dropdown-menu" [class.show]="isUserMenuOpen">
-                <a routerLink="/dashboard" class="dropdown-item" (click)="closeUserMenu()">Dashboard</a>
-                <a routerLink="/dashboard/portfolio" class="dropdown-item" (click)="closeUserMenu()">My Portfolio</a>
                 <a routerLink="/dashboard/my-posts" class="dropdown-item" (click)="closeUserMenu()">My Posts</a>
-                <a routerLink="/dashboard/profile" class="dropdown-item" (click)="closeUserMenu()">Profile</a>
+                <a routerLink="/dashboard/profile" class="dropdown-item" (click)="closeUserMenu()">Settings</a>
                 <hr class="dropdown-divider">
                 <button (click)="logout()" class="dropdown-item logout-btn">Logout</button>
               </div>
