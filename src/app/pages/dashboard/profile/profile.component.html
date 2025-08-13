@@ -1,20 +1,133 @@
 <div class="profile-container">
-  <h2>User Profile</h2>
-  <form (ngSubmit)="onUpdateProfile()" class="profile-form">
-    <div class="form-group">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required>
+  <div class="profile-header">
+    <h1>Profile Settings</h1>
+    <p>Manage your personal information</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading profile...</p>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="updateMessage" class="alert alert-success" (click)="clearMessages()">
+    <i class="fas fa-check-circle"></i>
+    {{ updateMessage }}
+    <button type="button" class="close-btn">&times;</button>
+  </div>
+
+  <div *ngIf="updateError" class="alert alert-error" (click)="clearMessages()">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ updateError }}
+    <button type="button" class="close-btn">&times;</button>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="!isLoading" class="profile-content">
+    
+    <!-- Profile Information Section -->
+    <div class="profile-section">
+      <div class="section-header">
+        <h2><i class="fas fa-user"></i> Profile Information</h2>
+        <p>Update your basic profile information</p>
+      </div>
+      
+      <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()" class="profile-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="username">Username *</label>
+            <input 
+              type="text" 
+              id="username" 
+              formControlName="username" 
+              class="form-control"
+              [class.error]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
+            <div *ngIf="profileForm.get('username')?.invalid && profileForm.get('username')?.touched" class="error-message">
+              Username is required (min 3 characters)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email" 
+              class="form-control"
+              [class.error]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+            <div *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" class="error-message">
+              Valid email is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="location">Location</label>
+            <input 
+              type="text" 
+              id="location" 
+              formControlName="location" 
+              placeholder="City, Country"
+              class="form-control">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="avatar">Avatar URL</label>
+            <input 
+              type="url" 
+              id="avatar" 
+              formControlName="avatar" 
+              placeholder="https://example.com/avatar.jpg"
+              class="form-control">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="bio">Bio</label>
+            <textarea 
+              id="bio" 
+              formControlName="bio" 
+              rows="4" 
+              placeholder="Tell us about yourself..."
+              class="form-control"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="profileForm.invalid || isUpdating">
+            <i *ngIf="isUpdating" class="fas fa-spinner fa-spin"></i>
+            {{ isUpdating ? 'Updating...' : 'Update Profile' }}
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="form-group">
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
+
+    <!-- Profile Preview Section -->
+    <div class="profile-section" *ngIf="userProfile">
+      <div class="section-header">
+        <h2><i class="fas fa-eye"></i> Profile Preview</h2>
+        <p>How others will see your profile</p>
+      </div>
+      
+      <div class="profile-preview">
+        <div class="preview-avatar">
+          <img 
+            [src]="userProfile.avatar || 'https://via.placeholder.com/100x100?text=Avatar'" 
+            [alt]="userProfile.username + ' avatar'"
+            class="avatar-image">
+        </div>
+        <div class="preview-info">
+          <h3>{{ userProfile.username }}</h3>
+          <p class="preview-email">{{ userProfile.email }}</p>
+          <p class="preview-location" *ngIf="userProfile.location">
+            <i class="fas fa-map-marker-alt"></i> {{ userProfile.location }}
+          </p>
+          <p class="preview-bio" *ngIf="userProfile.bio">{{ userProfile.bio }}</p>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label for="bio">Bio:</label>
-      <textarea id="bio" name="bio" rows="4"></textarea>
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Update Profile</button>
-    </div>
-  </form>
+
+  </div>
 </div>

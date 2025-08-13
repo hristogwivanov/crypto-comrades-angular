@@ -72,7 +72,10 @@ export class FirebaseAuthService {
           isEmailVerified: false,
           joinedDate: new Date(),
           totalPortfolioValue: 0,
-          portfolioPublic: false
+          portfolioPublic: false,
+          // New required fields
+          isActive: true,
+          portfolios: []
         };
 
         await this.firebaseService.set('users', firebaseUser.uid, userData).toPromise();

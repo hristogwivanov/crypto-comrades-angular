@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { Observable, map } from 'rxjs';
+import { Observable, map, take, filter, switchMap, of, timer } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -13,15 +13,31 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(): Observable<boolean> {
-    return this.authService.isAuthenticated$.pipe(
-      map(isAuthenticated => {
-        if (isAuthenticated) {
-          return true;
+    // Wait for Firebase auth state to initialize
+    return this.authService.currentUser$.pipe(
+      // Wait for the first emission that's not null or wait for a timeout
+      switchMap(user => {
+        if (user !== null) {
+          // User is authenticated
+          return of(true);
         } else {
-          this.router.navigate(['/auth/login']);
-          return false;
+          // User is null, but we need to make sure Firebase has finished initializing
+          // Wait briefly to see if Firebase will restore the session
+          return timer(1000).pipe(
+            switchMap(() => this.authService.currentUser$),
+            take(1),
+            map(finalUser => {
+              if (finalUser) {
+                return true;
+              } else {
+                this.router.navigate(['/auth/login']);
+                return false;
+              }
+            })
+          );
         }
-      })
+      }),
+      take(1)
     );
   }
 }

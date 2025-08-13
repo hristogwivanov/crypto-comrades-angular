@@ -10,12 +10,55 @@ export interface User {
 }
 
 export interface UserProfile extends User {
+  // Profile information
   bio?: string;
+  displayName?: string;
   location?: string;
   website?: string;
-  totalPortfolioValue: number;
+  
+  // Account metadata
+  updatedAt?: Date;
+  lastActiveAt?: Date;
+  isActive: boolean;
+  
+  // Crypto-specific profile data
+  favoriteCoins?: string[];
+  tradingExperience?: 'beginner' | 'intermediate' | 'advanced';
+  
+  // Portfolio references
+  portfolios: string[];
+  totalPortfolioValue?: number;
+  
+  // Social features
+  followersCount?: number;
+  followingCount?: number;
+  postsCount?: number;
+  
+  // Legacy compatibility
   joinedDate: Date;
   portfolioPublic: boolean;
+  
+  // Settings/preferences
+  preferences?: UserPreferences;
+  
+  // Privacy settings
+  privacy?: UserPrivacy;
+}
+
+export interface UserPreferences {
+  theme?: 'light' | 'dark';
+  currency?: 'USD' | 'EUR' | 'BTC';
+  notifications?: {
+    email: boolean;
+    portfolio: boolean;
+    social: boolean;
+  };
+}
+
+export interface UserPrivacy {
+  profileVisibility: 'public' | 'private';
+  portfolioVisibility: 'public' | 'private' | 'friends';
+  showHoldings: boolean;
 }
 
 export interface LoginCredentials {
