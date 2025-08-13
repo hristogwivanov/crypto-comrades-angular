@@ -34,6 +34,80 @@
       </div>
       
       <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()" class="profile-form">
+        <!-- Avatar Upload Section -->
+        <div class="avatar-section">
+          <div class="current-avatar">
+            <img 
+              [src]="getCurrentAvatarUrl()" 
+              [alt]="userProfile?.username + ' avatar'"
+              (error)="onAvatarImageError($event)"
+              class="current-avatar-image">
+          </div>
+          <div class="avatar-controls">
+            <h4>Profile Picture</h4>
+            <p>Upload a new avatar or provide a URL</p>
+            
+            <!-- File Upload -->
+            <div class="upload-area">
+              <input 
+                type="file" 
+                id="avatarFile" 
+                accept="image/*" 
+                (change)="onFileSelected($event)"
+                class="file-input"
+                #fileInput>
+              <label for="avatarFile" class="file-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                Choose Image
+              </label>
+              
+              <!-- Preview and Upload Controls -->
+              <div *ngIf="selectedFile || previewUrl" class="upload-preview">
+                <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview" class="preview-image">
+                <div class="upload-actions">
+                  <button 
+                    type="button" 
+                    class="btn btn-success btn-sm"
+                    (click)="uploadAvatar()"
+                    [disabled]="!selectedFile || isUploading">
+                    <i *ngIf="isUploading" class="fas fa-spinner fa-spin"></i>
+                    {{ isUploading ? 'Uploading...' : 'Upload' }}
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-secondary btn-sm"
+                    (click)="cancelUpload()"
+                    [disabled]="isUploading">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- URL Input Alternative -->
+            <div class="url-input-section">
+              <label for="avatar">Or enter Avatar URL</label>
+              <div class="input-group">
+                <input 
+                  type="url" 
+                  id="avatar" 
+                  formControlName="avatar" 
+                  placeholder="https://example.com/avatar.jpg"
+                  class="form-control">
+                <button 
+                  type="button" 
+                  class="btn btn-danger btn-sm"
+                  (click)="removeAvatar()"
+                  [disabled]="!userProfile?.avatar || isUpdating"
+                  *ngIf="userProfile?.avatar">
+                  <i class="fas fa-trash"></i>
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-grid">
           <div class="form-group">
             <label for="username">Username *</label>
@@ -72,16 +146,6 @@
           </div>
 
           <div class="form-group full-width">
-            <label for="avatar">Avatar URL</label>
-            <input 
-              type="url" 
-              id="avatar" 
-              formControlName="avatar" 
-              placeholder="https://example.com/avatar.jpg"
-              class="form-control">
-          </div>
-
-          <div class="form-group full-width">
             <label for="bio">Bio</label>
             <textarea 
               id="bio" 
@@ -104,30 +168,7 @@
       </form>
     </div>
 
-    <!-- Profile Preview Section -->
-    <div class="profile-section" *ngIf="userProfile">
-      <div class="section-header">
-        <h2><i class="fas fa-eye"></i> Profile Preview</h2>
-        <p>How others will see your profile</p>
-      </div>
-      
-      <div class="profile-preview">
-        <div class="preview-avatar">
-          <img 
-            [src]="userProfile.avatar || 'https://via.placeholder.com/100x100?text=Avatar'" 
-            [alt]="userProfile.username + ' avatar'"
-            class="avatar-image">
-        </div>
-        <div class="preview-info">
-          <h3>{{ userProfile.username }}</h3>
-          <p class="preview-email">{{ userProfile.email }}</p>
-          <p class="preview-location" *ngIf="userProfile.location">
-            <i class="fas fa-map-marker-alt"></i> {{ userProfile.location }}
-          </p>
-          <p class="preview-bio" *ngIf="userProfile.bio">{{ userProfile.bio }}</p>
-        </div>
-      </div>
-    </div>
+
 
   </div>
 </div>

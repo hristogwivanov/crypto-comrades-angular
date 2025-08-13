@@ -100,7 +100,7 @@ export class FirebaseUserService {
   }
 
   /**
-   * Update user profile
+   * Update user profile (creates document if it doesn't exist)
    */
   updateUserProfile(userId: string, updates: Partial<UserProfile>): Observable<void> {
     const userDocRef = doc(this.firestore, 'users', userId);
@@ -109,7 +109,7 @@ export class FirebaseUserService {
       updatedAt: Timestamp.now()
     };
 
-    return from(updateDoc(userDocRef, updateData)).pipe(
+    return from(setDoc(userDocRef, updateData, { merge: true })).pipe(
       map(() => void 0),
       catchError(error => {
         console.error('Error updating user profile:', error);
