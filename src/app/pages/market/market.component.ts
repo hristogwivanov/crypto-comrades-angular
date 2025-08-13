@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith } from 'rxjs/operators';
+import { takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith, map } from 'rxjs/operators';
 import { CryptoService } from '../../services/crypto.service';
 import { CryptoCurrency } from '../../models/crypto.interface';
 
@@ -30,10 +30,10 @@ import { CryptoCurrency } from '../../models/crypto.interface';
         
         <div class="filter-container">
           <select [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select">
+            <option value="market_cap">Market Cap</option>
             <option value="market_cap_rank">Market Cap Rank</option>
             <option value="current_price">Price</option>
             <option value="price_change_percentage_24h">24h Change</option>
-            <option value="market_cap">Market Cap</option>
             <option value="total_volume">Volume</option>
           </select>
           
@@ -142,8 +142,8 @@ export class MarketComponent implements OnInit, OnDestroy {
   filteredCryptos$!: Observable<CryptoCurrency[]>;
   
   searchTerm: string = '';
-  sortBy: string = 'market_cap_rank';
-  sortDirection: 'asc' | 'desc' = 'asc';
+  sortBy: string = 'market_cap';
+  sortDirection: 'asc' | 'desc' = 'desc';
   loading: boolean = false;
   error: string | null = null;
 
@@ -216,6 +216,65 @@ export class MarketComponent implements OnInit, OnDestroy {
     if (!this.cryptos$) return;
 
     this.filteredCryptos$ = this.cryptos$.pipe(
+      map((cryptos: CryptoCurrency[]) => {
+        // Filter by search term
+        let filteredCryptos = cryptos.filter((crypto: CryptoCurrency) => 
+          crypto.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+          crypto.symbol.toLowerCase().includes(this.searchTerm.toLowerCase())
+        );
+
+        // Sort by selected criteria
+        filteredCryptos = filteredCryptos.sort((a: CryptoCurrency, b: CryptoCurrency) => {
+          let aValue: any;
+          let bValue: any;
+
+          switch (this.sortBy) {
+            case 'market_cap_rank':
+              aValue = a.marketCapRank;
+              bValue = b.marketCapRank;
+              
+              // Handle unranked coins (null/undefined rank) - put them at the bottom
+              if (aValue == null && bValue == null) return 0;
+              if (aValue == null) return this.sortDirection === 'asc' ? 1 : -1;
+              if (bValue == null) return this.sortDirection === 'asc' ? -1 : 1;
+              break;
+            case 'current_price':
+              aValue = a.currentPrice;
+              bValue = b.currentPrice;
+              break;
+            case 'price_change_percentage_24h':
+              aValue = a.priceChangePercentage24h;
+              bValue = b.priceChangePercentage24h;
+              break;
+            case 'market_cap':
+              aValue = a.marketCap;
+              bValue = b.marketCap;
+              break;
+            case 'total_volume':
+              aValue = a.totalVolume;
+              bValue = b.totalVolume;
+              break;
+            default:
+              aValue = a.marketCapRank;
+              bValue = b.marketCapRank;
+              
+              // Handle unranked coins for default case as well
+              if (aValue == null && bValue == null) return 0;
+              if (aValue == null) return this.sortDirection === 'asc' ? 1 : -1;
+              if (bValue == null) return this.sortDirection === 'asc' ? -1 : 1;
+          }
+
+          // Handle null/undefined values for other sort criteria
+          if (aValue == null) aValue = 0;
+          if (bValue == null) bValue = 0;
+
+          const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+          return this.sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        // Limit to top 100 results
+        return filteredCryptos.slice(0, 100);
+      }),
       takeUntil(this.destroy$)
     );
   }
