@@ -24,7 +24,12 @@ import { Post } from '../../models/post.interface';
           </div>
           <div class="user-details">
             <h1 class="username">{{ profileUser.username }}</h1>
-            <p class="email" *ngIf="isOwnProfile">{{ profileUser.email }}</p>
+            <p class="location" *ngIf="getUserLocation()">
+              📍 {{ getUserLocation() }}
+            </p>
+            <p class="bio" *ngIf="getUserBio()">
+              {{ getUserBio() }}
+            </p>
             <p class="member-since" *ngIf="getMemberSinceDate()">
               Member since {{ getMemberSinceDate() | date:'MMMM yyyy' }}
             </p>
@@ -38,16 +43,16 @@ import { Post } from '../../models/post.interface';
           <div class="stat-label">Posts</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number">{{ userStats?.publicPosts || 0 }}</div>
-          <div class="stat-label">Public Posts</div>
+          <div class="stat-number">{{ userStats?.totalComments || 0 }}</div>
+          <div class="stat-label">Comments</div>
         </div>
         <div class="stat-card">
           <div class="stat-number">{{ userStats?.totalLikes || 0 }}</div>
           <div class="stat-label">Total Likes</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number">{{ userStats?.totalComments || 0 }}</div>
-          <div class="stat-label">Comments Made</div>
+          <div class="stat-number">{{ userStats?.totalDislikes || 0 }}</div>
+          <div class="stat-label">Total Dislikes</div>
         </div>
       </div>
 
@@ -62,7 +67,7 @@ import { Post } from '../../models/post.interface';
         </div>
 
         <div class="posts-preview" *ngIf="!loading">
-          <div class="post-card" *ngFor="let post of recentPosts">
+          <a [routerLink]="['/posts', post.id]" class="post-card" *ngFor="let post of recentPosts">
             <div class="post-header">
               <h3 class="post-title">
                 {{ post.title }}
@@ -71,15 +76,12 @@ import { Post } from '../../models/post.interface';
             </div>
             <p class="post-content-preview">{{ getPostPreview(post.content) }}</p>
             <div class="post-meta">
-              <span class="post-visibility" [class.public]="post.isPublic" [class.private]="!post.isPublic">
-                {{ post.isPublic ? 'Public' : 'Private' }}
-              </span>
               <div class="post-engagement">
                 <span class="likes">👍 {{ post.likes }}</span>
                 <span class="comments">💬 {{ post.comments.length || 0 }}</span>
               </div>
             </div>
-          </div>
+          </a>
 
           <div class="no-posts" *ngIf="recentPosts.length === 0">
             <p *ngIf="isOwnProfile">No posts yet.</p>
@@ -174,9 +176,9 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   calculateUserStats(posts: Post[]): void {
     this.userStats = {
       totalPosts: posts.length,
-      publicPosts: posts.filter(post => post.isPublic).length,
+      totalComments: posts.reduce((sum, post) => sum + (post.comments.length || 0), 0),
       totalLikes: posts.reduce((sum, post) => sum + (post.likes || 0), 0),
-      totalComments: posts.reduce((sum, post) => sum + (post.comments.length || 0), 0)
+      totalDislikes: posts.reduce((sum, post) => sum + (post.dislikes || 0), 0)
     };
   }
 
@@ -187,12 +189,26 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   getMemberSinceDate(): Date | null {
     if (!this.profileUser) return null;
     
-    // For UserProfile objects, check joinedDate first, then createdAt
-    if ('joinedDate' in this.profileUser && this.profileUser.joinedDate) {
-      return this.profileUser.joinedDate;
+    if ('createdAt' in this.profileUser && this.profileUser.createdAt) {
+      if (this.profileUser.createdAt instanceof Date) {
+        return this.profileUser.createdAt;
+      }
+      // Handle Firestore Timestamp
+      if (this.profileUser.createdAt && typeof this.profileUser.createdAt === 'object' && 'toDate' in this.profileUser.createdAt) {
+        return (this.profileUser.createdAt as any).toDate();
+      }
     }
     
-    // For both User and UserProfile objects, createdAt should exist
-    return this.profileUser.createdAt || null;
+    return null;
+  }
+
+  getUserLocation(): string | null {
+    if (!this.profileUser) return null;
+    return (this.profileUser as UserProfile).location || null;
+  }
+
+  getUserBio(): string | null {
+    if (!this.profileUser) return null;
+    return (this.profileUser as UserProfile).bio || null;
   }
 }
