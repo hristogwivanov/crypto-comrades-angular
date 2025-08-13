@@ -49,12 +49,7 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="checkbox-container">
-              <input type="checkbox" formControlName="rememberMe" class="checkbox-input">
-              <span class="checkbox-label">Remember me</span>
-            </label>
-          </div>
+
 
           <div class="form-error" *ngIf="loginError">
             <small>{{ loginError }}</small>
@@ -81,10 +76,6 @@ import { AuthService } from '../../../services/auth.service';
 
 
         <div class="auth-features">
-          <div class="feature">
-            <h4>💼 Portfolio Management</h4>
-            <p>Track your crypto holdings and performance</p>
-          </div>
           <div class="feature">
             <h4>📝 Community Posts</h4>
             <p>Share insights and engage with other traders</p>
@@ -114,8 +105,7 @@ export class LoginComponent implements OnDestroy {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
@@ -141,7 +131,7 @@ export class LoginComponent implements OnDestroy {
     this.isSubmitting = true;
     this.loginError = null;
 
-    const { email, password, rememberMe } = this.loginForm.value;
+    const { email, password } = this.loginForm.value;
 
     this.authService.login({ email, password }).pipe(
       takeUntil(this.destroy$)
