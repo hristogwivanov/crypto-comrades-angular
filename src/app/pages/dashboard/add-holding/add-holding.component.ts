@@ -84,7 +84,7 @@ export class AddHoldingComponent implements OnInit {
         // Create the portfolio holding
         this.cryptoService.createPortfolioHolding(holding).subscribe({
           next: (response) => {
-            console.log('Holding added successfully:', response);
+
             this.router.navigate(['/dashboard/portfolio']);
           },
           error: (error) => {

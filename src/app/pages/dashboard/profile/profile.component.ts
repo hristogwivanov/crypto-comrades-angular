@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FirebaseUserService } from '../../../services/firebase-user.service';
-import { FirebaseAuthService } from '../../../services/firebase-auth.service';
+import { AuthService } from '../../../services/auth.service';
 import { UserProfile, UserPreferences, UserPrivacy } from '../../../models/user.interface';
 import { Observable } from 'rxjs';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
@@ -32,7 +32,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private userService: FirebaseUserService,
-    private authService: FirebaseAuthService,
+    private authService: AuthService,
     private storage: Storage
   ) {
     this.initializeForms();
@@ -211,7 +211,6 @@ export class ProfileComponent implements OnInit {
     this.updateError = '';
   }
 
-  // Avatar upload methods
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
@@ -262,7 +261,7 @@ export class ProfileComponent implements OnInit {
       const fileExtension = this.selectedFile.name.split('.').pop()?.toLowerCase() || 'jpg';
       const filename = `avatars/${this.currentUserId}_${timestamp}.${fileExtension}`;
       
-      console.log('Uploading file:', filename, 'Size:', this.selectedFile.size);
+
       
       // Create storage reference
       const storageRef = ref(this.storage, filename);
@@ -278,28 +277,35 @@ export class ProfileComponent implements OnInit {
       
       // Upload file
       const snapshot = await uploadBytes(storageRef, this.selectedFile, metadata);
-      console.log('Upload successful:', snapshot);
+
       
       // Get download URL
       const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log('Download URL obtained:', downloadURL);
+
       
-      // Update user profile with new avatar URL
+      // Debug: Log current profile data before update
+
+      
+      // Update user profile with new avatar URL only (merge should preserve other fields)
       await this.userService.updateUserProfile(this.currentUserId, { avatar: downloadURL }).toPromise();
       
-      // Refresh current user in auth service to update header
-      await this.authService.refreshCurrentUser();
+      // Debug: Verify what's in the database after update
+
       
-      // Update form and preview
+
+      
+      // Update the current userProfile object with new avatar
+      if (this.userProfile) {
+        this.userProfile.avatar = downloadURL;
+      }
+      
+      // Update form with the new avatar URL only, preserving other fields
       this.profileForm.patchValue({ avatar: downloadURL });
       this.updateMessage = 'Avatar uploaded successfully!';
       
       // Clear selected file and preview
       this.selectedFile = null;
       this.previewUrl = null;
-      
-      // Reload user profile to get updated data
-      this.loadUserProfile(this.currentUserId);
       
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
@@ -326,8 +332,7 @@ export class ProfileComponent implements OnInit {
       
       this.userService.updateUserProfile(this.currentUserId, { avatar: '' }).subscribe({
         next: async () => {
-          // Refresh current user in auth service to update header
-          await this.authService.refreshCurrentUser();
+
           
           this.profileForm.patchValue({ avatar: '' });
           this.updateMessage = 'Avatar removed successfully!';

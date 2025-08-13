@@ -518,7 +518,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        console.log('Post deleted successfully');
+
         this.router.navigate(['/posts']);
       },
       error: (err: any) => {
@@ -651,7 +651,7 @@ export class PostDetailsComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        console.log('Comment deleted successfully');
+
         this.deletingComment = false;
         this.loadPost();
       },

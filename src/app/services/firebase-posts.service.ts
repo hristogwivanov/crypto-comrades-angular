@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map, switchMap, combineLatest, of, catchError } from 'rxjs';
 import { Post, Comment, PostInteraction } from '../models/post.interface';
 import { FirebaseService } from './firebase.service';
-import { FirebaseAuthService } from './firebase-auth.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +11,7 @@ export class FirebasePostsService {
 
   constructor(
     private firebaseService: FirebaseService,
-    private authService: FirebaseAuthService
+    private authService: AuthService
   ) {}
 
   // POST OPERATIONS

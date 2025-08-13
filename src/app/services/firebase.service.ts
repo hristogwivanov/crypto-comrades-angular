@@ -22,7 +22,7 @@ import {
   serverTimestamp,
   increment as firestoreIncrement
 } from '@angular/fire/firestore';
-import { Observable, from, map } from 'rxjs';
+import { Observable, from, map, tap, catchError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'

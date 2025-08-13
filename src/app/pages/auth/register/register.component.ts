@@ -213,10 +213,8 @@ export class RegisterComponent implements OnDestroy {
     ).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        // Redirect to login or dashboard
-        this.router.navigate(['/auth/login'], { 
-          queryParams: { message: 'Registration successful! Please sign in.' } 
-        });
+        // Redirect to community posts after successful registration
+        this.router.navigate(['/posts']);
       },
       error: (error) => {
         this.isSubmitting = false;

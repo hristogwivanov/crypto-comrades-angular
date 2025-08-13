@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, throwError, of, from } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
-import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../models/user.interface';
+import { User, LoginCredentials, RegisterCredentials, AuthResponse, UserProfile } from '../models/user.interface';
 import { Auth } from '@angular/fire/auth';
 import { 
   createUserWithEmailAndPassword, 
@@ -9,8 +9,10 @@ import {
   signOut, 
   onAuthStateChanged,
   updateProfile,
+  sendEmailVerification,
   User as FirebaseUser
 } from '@angular/fire/auth';
+import { FirebaseService } from './firebase.service';
 
 @Injectable({
   providedIn: 'root'
@@ -25,16 +27,16 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   private auth = inject(Auth);
+  private firebaseService = inject(FirebaseService);
 
   constructor() {
     this.initializeAuthState();
   }
 
   private initializeAuthState(): void {
-    // Listen to Firebase auth state changes
-    onAuthStateChanged(this.auth, (firebaseUser) => {
+    onAuthStateChanged(this.auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const user: User = this.mapFirebaseUserToUser(firebaseUser);
+        const user: User = await this.createUserFromFirebaseUser(firebaseUser);
         this.setUserInStorage(user);
         this.currentUserSubject.next(user);
         this.isAuthenticatedSubject.next(true);
@@ -63,13 +65,55 @@ export class AuthService {
   register(credentials: RegisterCredentials): Observable<AuthResponse> {
     return from(createUserWithEmailAndPassword(this.auth, credentials.email, credentials.password))
       .pipe(
-        switchMap(userCredential => {
-          // Update the user's display name to username
-          const displayName = credentials.username;
-          return from(updateProfile(userCredential.user, { displayName }))
-            .pipe(
-              map(() => userCredential)
-            );
+        switchMap(async (userCredential) => {
+          const firebaseUser = userCredential.user;
+          
+          await updateProfile(firebaseUser, { displayName: credentials.username });
+          await sendEmailVerification(firebaseUser);
+
+          const userData: Omit<UserProfile, 'id'> = {
+            email: firebaseUser.email!,
+            username: credentials.username,
+            firstName: '',
+            lastName: '',
+            displayName: credentials.username,
+            bio: '',
+            location: '',
+            website: '',
+            avatar: firebaseUser.photoURL || '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lastActiveAt: new Date(),
+            isEmailVerified: false,
+            joinedDate: new Date(),
+            totalPortfolioValue: 0,
+            portfolioPublic: false,
+            isActive: true,
+            portfolios: [],
+            favoriteCoins: [],
+            tradingExperience: 'beginner',
+            followersCount: 0,
+            followingCount: 0,
+            postsCount: 0,
+            preferences: {
+              theme: 'light',
+              currency: 'USD',
+              notifications: {
+                email: true,
+                portfolio: true,
+                social: true
+              }
+            },
+            privacy: {
+              profileVisibility: 'public',
+              portfolioVisibility: 'private',
+              showHoldings: false
+            }
+          };
+
+          await this.firebaseService.set('users', firebaseUser.uid, userData).toPromise();
+
+          return userCredential;
         }),
         map(userCredential => {
           const user = this.mapFirebaseUserToUser(userCredential.user);
@@ -118,6 +162,38 @@ export class AuthService {
 
   getCurrentUser(): Observable<User | null> {
     return this.currentUser$;
+  }
+
+  private async createUserFromFirebaseUser(firebaseUser: FirebaseUser): Promise<User> {
+    const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
+    
+    const baseUser: User = {
+      id: firebaseUser.uid,
+      email: firebaseUser.email || '',
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+      username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+      createdAt: new Date(firebaseUser.metadata.creationTime || new Date()),
+      isEmailVerified: firebaseUser.emailVerified
+    };
+
+    try {
+      const firestoreProfile = await this.firebaseService.get<UserProfile>('users', firebaseUser.uid).toPromise();
+      
+      if (firestoreProfile) {
+        return {
+          ...baseUser,
+          username: firestoreProfile.username || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+          firstName: firestoreProfile.firstName || baseUser.firstName,
+          lastName: firestoreProfile.lastName || baseUser.lastName,
+          isEmailVerified: firestoreProfile.isEmailVerified ?? baseUser.isEmailVerified
+        };
+      }
+    } catch (error) {
+      console.warn('Could not fetch Firestore profile for user:', firebaseUser.uid, error);
+    }
+
+    return baseUser;
   }
 
   private mapFirebaseUserToUser(firebaseUser: FirebaseUser): User {

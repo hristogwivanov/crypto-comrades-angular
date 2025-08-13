@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, switchMap, combineLatest, of, forkJoin } from 'rxjs';
 import { CryptoCurrency, Portfolio, PortfolioHolding } from '../models/crypto.interface';
 import { FirebaseService } from './firebase.service';
-import { FirebaseAuthService } from './firebase-auth.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +16,7 @@ export class FirebaseCryptoService {
   constructor(
     private http: HttpClient,
     private firebaseService: FirebaseService,
-    private authService: FirebaseAuthService
+    private authService: AuthService
   ) {}
 
   // CRYPTO DATA OPERATIONS (External API)
